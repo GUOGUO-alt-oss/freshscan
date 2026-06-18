@@ -1,0 +1,124 @@
+[
+  {
+    "label": "苹果",
+    "displayName": "苹果",
+    "category": "水果",
+    "intro": "苹果是蔷薇科苹果属植物的果实，是世界四大水果之一。富含果胶和抗氧化物质，口感清脆多汁，适合生食和烹饪。",
+    "nutrition": {
+      "caloriesKcal": 52,
+      "proteinG": 0.3,
+      "carbsG": 14.0,
+      "fatG": 0.2,
+      "fiberG": 2.4,
+      "vitaminCMg": 4.6,
+      "potassiumMg": 107,
+      "glycemicIndex": 36
+    },
+    "healthBenefits": [
+      "促进消化 — 富含膳食纤维和果胶",
+      "抗氧化 — 含花青素和槲皮素",
+      "心血管健康 — 钾含量有助于调节血压",
+      "控制体重 — 低热量高饱腹感"
+    ],
+    "storageTips": "室温阴凉处可存放7-10天；冷藏可延长至3-4周。避免与有强烈气味的食物一起存放。",
+    "seasonality": "9-11月"
+  },
+  {
+    "label": "橙子",
+    "displayName": "橙子",
+    "category": "水果",
+    "intro": "橙子是芸香科柑橘属植物果实，起源于东南亚。富含维生素C和类黄酮，酸甜多汁，是冬季主要水果之一。",
+    "nutrition": {
+      "caloriesKcal": 47,
+      "proteinG": 0.9,
+      "carbsG": 11.8,
+      "fatG": 0.1,
+      "fiberG": 2.4,
+      "vitaminCMg": 53.2,
+      "potassiumMg": 181,
+      "glycemicIndex": 43
+    },
+    "healthBenefits": [
+      "增强免疫力 — 高含量维生素C",
+      "促进铁吸收 — 维生素C与铁的协同作用",
+      "皮肤健康 — 抗氧化物质保护皮肤",
+      "心血管保护 — 橙皮苷有助于血管健康"
+    ],
+    "storageTips": "室温存放3-5天；冷藏可保存2-3周。不要密封存放，以免产生湿气加速腐烂。",
+    "seasonality": "10-2月"
+  },
+  {
+    "label": "香蕉",
+    "displayName": "香蕉",
+    "category": "水果",
+    "intro": "香蕉是芭蕉科芭蕉属植物的果实，原产于东南亚。富含钾和碳水化合物，是优质的能量补充水果。",
+    "nutrition": {
+      "caloriesKcal": 89,
+      "proteinG": 1.1,
+      "carbsG": 22.8,
+      "fatG": 0.3,
+      "fiberG": 2.6,
+      "vitaminCMg": 8.7,
+      "potassiumMg": 358,
+      "glycemicIndex": 51
+    },
+    "healthBenefits": [
+      "补充能量 — 富含天然果糖和葡萄糖",
+      "维持电解质平衡 — 富含钾元素",
+      "促进消化 — 含果胶和益生元",
+      "改善心情 — 含色氨酸前体"
+    ],
+    "storageTips": "室温存放，避免阳光直射。未成熟香蕉可与苹果同放加速催熟。成熟后尽快食用。",
+    "seasonality": "全年"
+  },
+  {
+    "label": "番茄",
+    "displayName": "番茄",
+    "category": "蔬菜",
+    "intro": "番茄是茄科番茄属植物的果实，原产于南美洲。富含番茄红素和维生素C，既可生食也可烹饪，是使用最广泛的食材之一。",
+    "nutrition": {
+      "caloriesKcal": 18,
+      "proteinG": 0.9,
+      "carbsG": 3.9,
+      "fatG": 0.2,
+      "fiberG": 1.2,
+      "vitaminCMg": 14,
+      "vitaminAUg": 42,
+      "potassiumMg": 237,
+      "glycemicIndex": 15
+    },
+    "healthBenefits": [
+      "抗氧化 — 富含番茄红素（烹饪后更易吸收）",
+      "心脏健康 — 钾和番茄红素的协同作用",
+      "皮肤保护 — 番茄红素有助于防紫外线",
+      "低热量 — 适合减脂和控糖饮食"
+    ],
+    "storageTips": "室温存放保持风味，避免冷藏以免口感变粉。成熟番茄冷藏可保存3-5天。",
+    "seasonality": "6-9月"
+  },
+  {
+    "label": "黄瓜",
+    "displayName": "黄瓜",
+    "category": "蔬菜",
+    "intro": "黄瓜是葫芦科黄瓜属植物，原产于印度。含水量极高（约96%），清脆爽口，是夏季消暑佳品。",
+    "nutrition": {
+      "caloriesKcal": 15,
+      "proteinG": 0.7,
+      "carbsG": 2.9,
+      "fatG": 0.1,
+      "fiberG": 0.5,
+      "vitaminCMg": 2.8,
+      "vitaminAUg": 5,
+      "potassiumMg": 147,
+      "glycemicIndex": 15
+    },
+    "healthBenefits": [
+      "补水保湿 — 含水量高达96%",
+      "消肿利尿 — 含钾和葫芦素",
+      "控制血糖 — 极低碳水含量",
+      "皮肤护理 — 维生素C和咖啡酸"
+    ],
+    "storageTips": "冷藏保存，用保鲜膜包裹防止失水。最佳食用期3-5天。",
+    "seasonality": "6-8月"
+  }
+]

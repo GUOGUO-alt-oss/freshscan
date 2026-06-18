@@ -100,4 +100,56 @@
     <string name="recipe_missing_items_2">还缺少：%1$s</string>
     <string name="recipe_missing_items_n">需额外准备 %1$d 种食材</string>
     <string name="recipe_temp_unavailable">菜谱推荐暂时不可用，请稍后重试</string>
+
+    <!-- v3: Personalize Screen -->
+    <string name="personalize_title">个性化定制</string>
+    <string name="personalize_save">保存</string>
+    <string name="personalize_section_taste">口味偏好</string>
+    <string name="personalize_section_body">身体数据</string>
+    <string name="personalize_section_goals">目标与活动</string>
+    <string name="personalize_section_constraints">饮食约束</string>
+    <string name="personalize_spice_level">辣度</string>
+    <string name="personalize_salt_level">盐度</string>
+    <string name="personalize_oil_level">油量</string>
+    <string name="personalize_age">年龄</string>
+    <string name="personalize_height">身高</string>
+    <string name="personalize_weight">体重</string>
+    <string name="personalize_gender">性别</string>
+    <string name="personalize_activity">活动量</string>
+    <string name="personalize_goal">健康目标</string>
+    <string name="personalize_meals_per_day">每日餐数</string>
+    <string name="personalize_calorie_target">热量目标（可选，留空由AI计算）</string>
+    <string name="personalize_max_cooking_time">最长烹饪时间</string>
+    <string name="personalize_allergies">过敏原</string>
+    <string name="personalize_start_customization">🪄 开始定制</string>
+    <string name="personalize_saved">保存成功</string>
+    <string name="personalize_excluded_ingredients">饮食忌口</string>
+    <string name="personalize_preferred_categories">菜谱偏好</string>
+
+    <!-- v3: Diet Plan Screen -->
+    <string name="diet_plan_title">饮食计划</string>
+    <string name="diet_plan_generating">AI 正在为你定制一周饮食计划…</string>
+    <string name="diet_plan_retry">重试</string>
+    <string name="diet_plan_avg_calories">日均热量</string>
+    <string name="diet_plan_add_all_to_cart">全部加入购物清单</string>
+    <string name="diet_plan_add_to_cart">加入购物清单</string>
+    <string name="diet_plan_total_calories">总热量</string>
+    <string name="diet_plan_back">返回</string>
+
+    <!-- v3: Produce Info Sheet -->
+    <string name="produce_info_intro">📖 简介</string>
+    <string name="produce_info_nutrition">📊 营养成分（每100g）</string>
+    <string name="produce_info_benefits">💪 健康功效</string>
+    <string name="produce_info_storage">📦 保存方法</string>
+    <string name="produce_info_ai_section">🤖 AI 扩展</string>
+    <string name="produce_info_ai_loading">AI 正在生成…</string>
+    <string name="produce_info_ai_retry">加载失败，点击重试</string>
+    <string name="produce_info_seasonality">时令</string>
+    <string name="produce_info_selection_tips">🔍 挑选技巧</string>
+    <string name="produce_info_pairing">🥗 搭配建议</string>
+    <string name="produce_info_fun_fact">💡 你知道吗</string>
+
+    <!-- v3: Settings -->
+    <string name="settings_personalize">个性化定制</string>
+    <string name="settings_personalize_subtitle">口味偏好 · 身体数据 · AI 饮食计划</string>
 </resources>

@@ -12,6 +12,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -24,10 +25,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.example.freshscan.ui.screen.analysis.AnalysisScreen
+import com.example.freshscan.ui.screen.personalize.DietPlanScreen
+import com.example.freshscan.ui.screen.personalize.PersonalizeScreen
 import com.example.freshscan.ui.screen.detail.DetailScreen
 import com.example.freshscan.ui.screen.history.HistoryScreen
 import com.example.freshscan.ui.screen.home.HomeScreen
-import com.example.freshscan.ui.screen.profile.TasteProfileScreen
 import com.example.freshscan.ui.screen.recipe.RecipeDetailScreen
 import com.example.freshscan.ui.screen.settings.SettingsScreen
 import com.example.freshscan.ui.screen.shopping.ShoppingListScreen
@@ -50,8 +52,15 @@ object Routes {
     const val ANALYSIS = "analysis"
     const val DETAIL = "detail/{resultId}"
     const val RECIPE_DETAIL = "recipe/{recipeId}"
-    const val TASTE_PROFILE = "profile/taste"
     const val SHOPPING_LIST = "shopping-list"
+
+    // ── v3 新增 ──
+    const val PERSONALIZE = "personalize"
+    const val DIET_PLAN = "diet-plan"
+
+    // ── v3 废弃 ──
+    @Deprecated("Replaced by PERSONALIZE")
+    const val TASTE_PROFILE = "profile/taste"
 
     // Helper functions for parameterized routes
     fun detail(resultId: String) = "detail/$resultId"
@@ -154,8 +163,8 @@ fun AppNavGraph(navController: NavHostController) {
 
         composable(Routes.SETTINGS) {
             SettingsScreen(
-                onNavigateToTasteProfile = {
-                    navController.navigate(Routes.TASTE_PROFILE)
+                onNavigateToPersonalize = {
+                    navController.navigate(Routes.PERSONALIZE)
                 },
                 onNavigateToShoppingList = {
                     navController.navigate(Routes.SHOPPING_LIST)
@@ -202,10 +211,32 @@ fun AppNavGraph(navController: NavHostController) {
             )
         }
 
-        composable(Routes.TASTE_PROFILE) {
-            TasteProfileScreen(
-                onNavigateBack = { navController.popBackStack() }
+        // ── v3: Personalize (replaces TasteProfile) ──
+        composable(Routes.PERSONALIZE) {
+            PersonalizeScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToDietPlan = {
+                    navController.navigate(Routes.DIET_PLAN)
+                }
             )
+        }
+
+        composable(Routes.DIET_PLAN) {
+            DietPlanScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToShoppingList = {
+                    navController.navigate(Routes.SHOPPING_LIST)
+                }
+            )
+        }
+
+        // Legacy: redirect TASTE_PROFILE to PERSONALIZE
+        composable(Routes.TASTE_PROFILE) {
+            LaunchedEffect(Unit) {
+                navController.navigate(Routes.PERSONALIZE) {
+                    popUpTo(Routes.TASTE_PROFILE) { inclusive = true }
+                }
+            }
         }
 
         composable(Routes.SHOPPING_LIST) {

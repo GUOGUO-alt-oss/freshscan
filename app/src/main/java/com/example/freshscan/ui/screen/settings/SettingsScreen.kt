@@ -52,7 +52,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onNavigateToTasteProfile: () -> Unit,
+    onNavigateToPersonalize: () -> Unit,
     onNavigateToShoppingList: () -> Unit,
     onNavigateBack: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
@@ -91,9 +91,9 @@ fun SettingsScreen(
             SectionHeader(title = "菜谱偏好")
             SettingsRow(
                 icon = Icons.Outlined.Face,
-                title = "口味档案",
-                subtitle = "设置口味偏好获得精准推荐",
-                onClick = onNavigateToTasteProfile
+                title = "个性化定制",
+                subtitle = "口味偏好 · 身体数据 · AI 饮食计划",
+                onClick = onNavigateToPersonalize
             )
             SettingsRow(
                 icon = Icons.Filled.ShoppingCart,
