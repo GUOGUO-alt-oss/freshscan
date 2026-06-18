@@ -33,6 +33,7 @@ android {
             isMinifyEnabled = false
             isDebuggable = true
             buildConfigField("boolean", "ENABLE_VERBOSE_LOGGING", "true")
+            buildConfigField("String", "AI_API_KEY", "\"${findProperty("AI_API_KEY") ?: ""}\"")
         }
 
         release {
@@ -44,6 +45,7 @@ android {
                 "proguard-rules.pro"
             )
             buildConfigField("boolean", "ENABLE_VERBOSE_LOGGING", "false")
+            buildConfigField("String", "AI_API_KEY", "\"${findProperty("AI_API_KEY") ?: ""}\"")
         }
     }
 
@@ -127,6 +129,9 @@ dependencies {
 
     // MediaPipe Tasks Vision (EfficientDet-Lite0 object detection)
     implementation(libs.mediapipe.tasks.vision)
+
+    // v3: Networking for AI API
+    implementation(libs.okhttp)
 
     // Coil (Compose image loading)
     implementation(libs.coil.compose)
