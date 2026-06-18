@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.Collections
 import java.util.LinkedHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -24,11 +25,13 @@ class ProduceInfoEngine @Inject constructor(
     private val labelNormalizer: LabelNormalizer
 ) {
     /** LRU cache for AI-extended info (max 50 entries). */
-    private val aiCache = object : LinkedHashMap<String, ProduceInfo>(50, 0.75f, true) {
-        override fun removeEldestEntry(
-            eldest: MutableMap.MutableEntry<String, ProduceInfo>?
-        ): Boolean = size > 50
-    }
+    private val aiCache = Collections.synchronizedMap(
+        object : LinkedHashMap<String, ProduceInfo>(50, 0.75f, true) {
+            override fun removeEldestEntry(
+                eldest: MutableMap.MutableEntry<String, ProduceInfo>?
+            ): Boolean = size > 50
+        }
+    )
 
     @Volatile private var coreInfoCache: Map<String, ProduceInfo>? = null
 
@@ -73,34 +76,47 @@ class ProduceInfoEngine @Inject constructor(
         val array = JSONArray(jsonStr)
         val result = mutableMapOf<String, ProduceInfo>()
         for (i in 0 until array.length()) {
-            val obj = array.getJSONObject(i)
-            val nutrition = obj.getJSONObject("nutrition")
-            val benefits = (0 until obj.getJSONArray("healthBenefits").length())
-                .map { j -> obj.getJSONArray("healthBenefits").getString(j) }
-            result[obj.getString("label")] = ProduceInfo(
-                label = obj.getString("label"),
-                displayName = obj.getString("displayName"),
-                category = obj.getString("category"),
-                intro = obj.getString("intro"),
-                nutrition = NutritionFacts(
-                    caloriesKcal = nutrition.getInt("caloriesKcal"),
-                    proteinG = nutrition.getDouble("proteinG").toFloat(),
-                    carbsG = nutrition.getDouble("carbsG").toFloat(),
-                    fatG = nutrition.getDouble("fatG").toFloat(),
-                    fiberG = nutrition.getDouble("fiberG").toFloat(),
-                    vitaminCMg = nutrition.optDouble("vitaminCMg", -1.0)
-                        .takeIf { it >= 0 }?.toFloat(),
-                    vitaminAUg = nutrition.optDouble("vitaminAUg", -1.0)
-                        .takeIf { it >= 0 }?.toFloat(),
-                    potassiumMg = nutrition.optDouble("potassiumMg", -1.0)
-                        .takeIf { it >= 0 }?.toFloat(),
-                    glycemicIndex = nutrition.optInt("glycemicIndex", -1)
-                        .takeIf { it >= 0 }
-                ),
-                healthBenefits = benefits,
-                storageTips = obj.getString("storageTips"),
-                seasonality = obj.getString("seasonality")
-            )
+            try {
+                val obj = array.getJSONObject(i)
+                if (!obj.has("nutrition")) {
+                    Logger.w("ProduceInfoEngine", "Skipping entry $i: missing nutrition")
+                    continue
+                }
+                val nutrition = obj.getJSONObject("nutrition")
+                val benefits = (0 until (obj.optJSONArray("healthBenefits")?.length() ?: 0))
+                    .map { j -> obj.getJSONArray("healthBenefits").getString(j) }
+                val label = obj.optString("label", "")
+                if (label.isEmpty()) {
+                    Logger.w("ProduceInfoEngine", "Skipping entry $i: missing label")
+                    continue
+                }
+                result[label] = ProduceInfo(
+                    label = label,
+                    displayName = obj.optString("displayName", label),
+                    category = obj.optString("category", ""),
+                    intro = obj.optString("intro", ""),
+                    nutrition = NutritionFacts(
+                        caloriesKcal = nutrition.optInt("caloriesKcal", 0),
+                        proteinG = nutrition.optDouble("proteinG", 0.0).toFloat(),
+                        carbsG = nutrition.optDouble("carbsG", 0.0).toFloat(),
+                        fatG = nutrition.optDouble("fatG", 0.0).toFloat(),
+                        fiberG = nutrition.optDouble("fiberG", 0.0).toFloat(),
+                        vitaminCMg = nutrition.optDouble("vitaminCMg", -1.0)
+                            .takeIf { it >= 0 }?.toFloat(),
+                        vitaminAUg = nutrition.optDouble("vitaminAUg", -1.0)
+                            .takeIf { it >= 0 }?.toFloat(),
+                        potassiumMg = nutrition.optDouble("potassiumMg", -1.0)
+                            .takeIf { it >= 0 }?.toFloat(),
+                        glycemicIndex = nutrition.optInt("glycemicIndex", -1)
+                            .takeIf { it >= 0 }
+                    ),
+                    healthBenefits = benefits,
+                    storageTips = obj.optString("storageTips", ""),
+                    seasonality = obj.optString("seasonality", "")
+                )
+            } catch (e: Exception) {
+                Logger.w("ProduceInfoEngine", "Skipping malformed entry $i: ${e.message}")
+            }
         }
         Logger.i("ProduceInfoEngine", "Loaded ${result.size} produce info entries")
         result
