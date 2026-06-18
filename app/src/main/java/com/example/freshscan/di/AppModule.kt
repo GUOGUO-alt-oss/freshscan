@@ -4,6 +4,11 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
+import com.example.freshscan.BuildConfig
+import com.example.freshscan.data.ai.AIService
+import com.example.freshscan.data.ai.QwenAIService
+import com.example.freshscan.data.diet.DietPlanEngine
+import com.example.freshscan.data.history.DietPlanDao
 import com.example.freshscan.data.history.HistoryDao
 import com.example.freshscan.data.history.HistoryRepositoryImpl
 import com.example.freshscan.data.inference.ModelLoader
@@ -12,6 +17,8 @@ import com.example.freshscan.data.inference.model.ModelConfig
 import com.example.freshscan.data.inference.model.ModelConfigV2
 import com.example.freshscan.data.mapper.ModelMapper
 import com.example.freshscan.data.mapper.ModelMapperV2
+import com.example.freshscan.data.produce.ProduceInfoEngine
+import com.example.freshscan.data.recipe.LabelNormalizer
 import com.example.freshscan.domain.repository.HistoryRepository
 import com.example.freshscan.util.ImagePreprocessor
 import dagger.Module
@@ -116,4 +123,42 @@ object AppModule {
     @Singleton
     fun provideTasteProfileStore(@ApplicationContext ctx: Context): DataStore<Preferences> =
         TasteProfileDataStore.get(ctx)
+
+    // ─── v3: AI Service ───
+
+    @Provides
+    @Singleton
+    @AIApiKey
+    fun provideAIApiKey(): String = BuildConfig.AI_API_KEY
+
+    @Provides
+    @Singleton
+    @AIBaseUrl
+    fun provideAIBaseUrl(): String = "https://dashscope.aliyuncs.com/api/v1"
+
+    @Provides
+    @Singleton
+    fun provideAIService(
+        @AIApiKey apiKey: String,
+        @AIBaseUrl baseUrl: String
+    ): AIService = QwenAIService(apiKey, baseUrl)
+
+    // ─── v3: Produce Info ───
+
+    @Provides
+    @Singleton
+    fun provideProduceInfoEngine(
+        @ApplicationContext ctx: Context,
+        aiService: AIService,
+        labelNormalizer: LabelNormalizer
+    ): ProduceInfoEngine = ProduceInfoEngine(ctx, aiService, labelNormalizer)
+
+    // ─── v3: Diet Plan ───
+
+    @Provides
+    @Singleton
+    fun provideDietPlanEngine(
+        aiService: AIService,
+        dietPlanDao: DietPlanDao
+    ): DietPlanEngine = DietPlanEngine(aiService, dietPlanDao)
 }
