@@ -59,6 +59,10 @@ import com.example.freshscan.domain.model.RecipeCategory
  *
  * Wireframe: docs/03-UI设计规格-v2.md §4.5
  */
+@Deprecated(
+    message = "Replaced by PersonalizeScreen in v3.0",
+    replaceWith = ReplaceWith("PersonalizeScreen")
+)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun TasteProfileScreen(

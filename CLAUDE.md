@@ -22,6 +22,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - ✅ Code review fixes batch 2: CI1/CI2/U4 fixed — CI adds `./gradlew lint` step + detekt strict mode; hardcoded Chinese strings migrated to `strings.xml` (AnalysisScreen, AnalysisViewModel, RecipeEngine, NavGraph bottom nav labels) + RecipeEngineTest adapted for `context.getString()` — 3 files modified, 1 test updated, all ~222 tests pass, 1× `assembleDebug` verified
 - ✅ Real device bug fixes: (1) History records showing "未知" for 260-class items — `EntityMapper.toEntityFromDetectedItem()` now uses `mapLabelToFruitCategory()` with multi-strategy label→FruitCategory resolution. (2) Model accuracy degradation on real photos — removed `FOOD_CLASSES` COCO filter in `DetectionPostprocessor` (EfficientDet was discarding valid fruit boxes that weren't in its narrow COCO food list, forcing full-image fallback); added 15% margin to detection crops so the 260-class model receives input closer to its Fruits-360 training distribution — 2 files modified, all tests pass, 1× `assembleDebug` verified
 - 🆕 v3 design + plan complete: [spec](docs/superpowers/specs/2026-06-18-freshscan-v3-design.md) + [plan](docs/superpowers/plans/2026-06-18-freshscan-v3-implementation.md) — 21 new files, 10 modified, 2 deprecated; 17 tasks, 6 phases, ~8.5 days
+- ✅ v3.0 code complete: 17 tasks across 6 phases — AI service layer (QwenAIService), ProduceInfoEngine (local JSON + AI extension), DietPlanEngine (Mifflin-St Jeor BMR + 7-day AI meal plans), PersonalizeScreen (full health profile replacing TasteProfile), DietPlanScreen (ScrollableTabRow 7-day view + shopping list integration), ProduceInfoSheet (AnalysisScreen inline detail), Room v2→v3 migration (user_profile + diet_plans tables), 64 unit tests — all ~310 tests pass, 1× `assembleDebug` verified
 
 ### Version Roadmap
 
@@ -352,6 +353,63 @@ After testing on real phone camera photos, three issues were identified and fixe
 | [docs/05-文档审查报告-v2.md](docs/05-文档审查报告-v2.md) | Cross-document review findings (Round 1 + Round 2) |
 | [docs/06-详细设计文档-v2.md](docs/06-详细设计文档-v2.md) | **Implementation blueprint** — DI bindings, class signatures, state machines, JSON schemas, file manifest (§12) |
 
+### v3 New Files
+
+| File | Purpose |
+|------|---------|
+| **Data/AI Layer** | |
+| [data/ai/AIService.kt](app/src/main/java/com/example/freshscan/data/ai/AIService.kt) | Abstract AI service interface (chat + chatJson) |
+| [data/ai/AIServiceError.kt](app/src/main/java/com/example/freshscan/data/ai/AIServiceError.kt) | AI error types (Network/Timeout/Quota/InvalidResponse/Unknown) |
+| [data/ai/QwenAIService.kt](app/src/main/java/com/example/freshscan/data/ai/QwenAIService.kt) | DashScope Qwen API client (OkHttp, auto-retry, code fence stripping) |
+| **Data/Produce Layer** | |
+| [data/produce/ProduceInfoEngine.kt](app/src/main/java/com/example/freshscan/data/produce/ProduceInfoEngine.kt) | Produce encyclopedia engine (local JSON + AI extension + LRU cache) |
+| **Data/Diet Layer** | |
+| [data/diet/DietPlanEngine.kt](app/src/main/java/com/example/freshscan/data/diet/DietPlanEngine.kt) | AI 7-day diet plan engine (BMR/TDEE + prompt building + Room persistence) |
+| **Data/History Layer** | |
+| [data/history/DietPlanEntity.kt](app/src/main/java/com/example/freshscan/data/history/DietPlanEntity.kt) | Room entity for diet_plans table |
+| [data/history/DietPlanDao.kt](app/src/main/java/com/example/freshscan/data/history/DietPlanDao.kt) | DAO for diet plan CRUD |
+| [data/history/UserProfileEntity.kt](app/src/main/java/com/example/freshscan/data/history/UserProfileEntity.kt) | Room entity for user_profile singleton table |
+| [data/history/UserProfileDao.kt](app/src/main/java/com/example/freshscan/data/history/UserProfileDao.kt) | DAO for user profile persistence |
+| **Domain Layer** | |
+| [domain/model/ProduceInfo.kt](app/src/main/java/com/example/freshscan/domain/model/ProduceInfo.kt) | ProduceInfo + NutritionFacts domain models |
+| [domain/model/UserProfile.kt](app/src/main/java/com/example/freshscan/domain/model/UserProfile.kt) | Extended user profile with body metrics + health goals |
+| [domain/model/DietPlan.kt](app/src/main/java/com/example/freshscan/domain/model/DietPlan.kt) | DietPlan/DailyMealPlan/Meal/DietRecipe/MealType models |
+| **Presentation Layer** | |
+| [ui/components/ProduceInfoSheet.kt](app/src/main/java/com/example/freshscan/ui/components/ProduceInfoSheet.kt) | Produce detail BottomSheet component |
+| [ui/screen/personalize/PersonalizeScreen.kt](app/src/main/java/com/example/freshscan/ui/screen/personalize/PersonalizeScreen.kt) | Full health profile form (replaces TasteProfile) |
+| [ui/screen/personalize/PersonalizeViewModel.kt](app/src/main/java/com/example/freshscan/ui/screen/personalize/PersonalizeViewModel.kt) | Profile state management + Room persistence |
+| [ui/screen/personalize/PersonalizeUiState.kt](app/src/main/java/com/example/freshscan/ui/screen/personalize/PersonalizeUiState.kt) | Personalize form UI state |
+| [ui/screen/personalize/DietPlanScreen.kt](app/src/main/java/com/example/freshscan/ui/screen/personalize/DietPlanScreen.kt) | 7-day meal plan display with shopping list |
+| [ui/screen/personalize/DietPlanViewModel.kt](app/src/main/java/com/example/freshscan/ui/screen/personalize/DietPlanViewModel.kt) | Diet plan generation state machine |
+| **Assets** | |
+| [assets/produce_info.json](app/src/main/assets/produce_info.json) | 5 sample produce info entries (~82 planned) |
+| **DI** | |
+| [di/Qualifiers.kt](app/src/main/java/com/example/freshscan/di/Qualifiers.kt) | Added @AIApiKey, @AIBaseUrl qualifiers |
+
+### v3 Test Files
+
+| File | Purpose | Tests |
+|------|---------|-------|
+| [data/diet/DietPlanEngineTest.kt](app/src/test/java/com/example/freshscan/data/diet/DietPlanEngineTest.kt) | BMR/TDEE, JSON parsing, entity mapping, error handling | 25 |
+| [ui/screen/personalize/PersonalizeViewModelTest.kt](app/src/test/java/com/example/freshscan/ui/screen/personalize/PersonalizeViewModelTest.kt) | Form state, save/load, navigation events | 25 |
+| [ui/screen/personalize/DietPlanViewModelTest.kt](app/src/test/java/com/example/freshscan/ui/screen/personalize/DietPlanViewModelTest.kt) | State machine, day selection, shopping list | 14 |
+
+### v3 Modified Files
+
+| File | Change |
+|------|--------|
+| [di/AppModule.kt](app/src/main/java/com/example/freshscan/di/AppModule.kt) | Added AI API key/URL providers, AIService, ProduceInfoEngine, DietPlanEngine bindings |
+| [di/DatabaseModule.kt](app/src/main/java/com/example/freshscan/di/DatabaseModule.kt) | Added UserProfileDao, DietPlanDao providers + MIGRATION_2_3 |
+| [data/history/HistoryDatabase.kt](app/src/main/java/com/example/freshscan/data/history/HistoryDatabase.kt) | Version 2→3, UserProfileEntity/DietPlanEntity, MIGRATION_2_3 |
+| [navigation/NavGraph.kt](app/src/main/java/com/example/freshscan/navigation/NavGraph.kt) | Added PERSONALIZE/DIET_PLAN routes, TASTE_PROFILE redirect |
+| [ui/screen/analysis/AnalysisViewModel.kt](app/src/main/java/com/example/freshscan/ui/screen/analysis/AnalysisViewModel.kt) | Added ProduceInfoEngine + onItemClicked/clearSelectedItem |
+| [ui/screen/analysis/AnalysisScreen.kt](app/src/main/java/com/example/freshscan/ui/screen/analysis/AnalysisScreen.kt) | DetectedItemCard click handler + ProduceInfoSheet integration |
+| [ui/screen/settings/SettingsScreen.kt](app/src/main/java/com/example/freshscan/ui/screen/settings/SettingsScreen.kt) | "口味档案" → "个性化定制" entry |
+| [gradle/libs.versions.toml](gradle/libs.versions.toml) | Added okhttp = "4.12.0" |
+| [app/build.gradle.kts](app/build.gradle.kts) | Added okhttp dependency + AI_API_KEY BuildConfig |
+| [gradle.properties](gradle.properties) | Added AI_API_KEY placeholder |
+| [res/values/strings.xml](app/src/main/res/values/strings.xml) | Added 42 v3 string resources |
+
 ## Bug Fixes
 
 ### Week 2
@@ -403,7 +461,7 @@ v2.0 complete. To start v3.0 (AI integration + produce encyclopedia + personaliz
 
 > 继续 FreshScan v3.0，按 docs/superpowers/plans/2026-06-18-freshscan-v3-implementation.md 执行 17 个任务。Phase 1 从 Task 1（依赖+BuildConfig）开始。每完成一个任务编译验证。
 
-**Current state:** v2.0 fully complete. v3.0 design + plan written. `AnalysisViewModel` runs 3-stage pipeline with v1 degradation. `AnalysisScreen` displays Results via ModalBottomSheet 3-state (COLLAPSED/HALF/FULL) with recipe recommendations. `RecipeEngine` ranks 111 preset recipes by ingredient match + taste profile weighting. History auto-saves. Model runs CPU-only for accuracy.
+**Current state:** v3.0 code complete. AI service layer (DashScope Qwen), produce encyclopedia (5 sample entries, ~82 planned), personalized 7-day diet plans via AI, PersonalizeScreen replaces TasteProfileScreen. Room v3 schema. ~310 tests pass. Todo: expand produce_info.json from 5→82 entries, add API key, real device testing.
 
 **Model files in assets:**
 - `fruit_freshness_model.tflite` ✅ (v1 18-class, CPU-only)

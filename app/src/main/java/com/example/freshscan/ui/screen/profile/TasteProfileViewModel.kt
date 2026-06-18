@@ -26,6 +26,10 @@ import javax.inject.Inject
  * Manages user taste preferences (spice tolerance, salt/oil preference,
  * disliked ingredients, preferred categories) persisted via DataStore Preferences.
  */
+@Deprecated(
+    message = "Replaced by PersonalizeViewModel in v3.0",
+    replaceWith = ReplaceWith("PersonalizeViewModel")
+)
 @HiltViewModel
 class TasteProfileViewModel @Inject constructor(
     private val tasteProfileStore: DataStore<Preferences>
