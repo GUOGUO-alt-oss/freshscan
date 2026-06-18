@@ -92,74 +92,110 @@ class DietPlanEngine @Inject constructor(
         }
     }
 
-    private fun parseDietPlan(jsonStr: String, profile: UserProfile): DietPlan {
+    private fun parseDietPlan(jsonStr: String, profile: UserProfile): DietPlan = try {
         val root = JSONObject(jsonStr)
         val dailyPlans = mutableListOf<DailyMealPlan>()
-        val dailyArray = root.getJSONArray("dailyPlans")
+        val dailyArray = root.optJSONArray("dailyPlans") ?: return DietPlan(
+            id = UUID.randomUUID().toString(),
+            generatedAt = System.currentTimeMillis(),
+            userProfileSnapshot = profile,
+            dailyPlans = emptyList(),
+            totalCaloriesAvg = 0,
+            nutritionSummary = ""
+        )
         for (i in 0 until dailyArray.length()) {
-            val dayObj = dailyArray.getJSONObject(i)
+            val dayObj = dailyArray.optJSONObject(i) ?: continue
             val meals = mutableListOf<Meal>()
-            val mealsArray = dayObj.getJSONArray("meals")
+            val mealsArray = dayObj.optJSONArray("meals") ?: continue
             for (j in 0 until mealsArray.length()) {
-                val mealObj = mealsArray.getJSONObject(j)
+                val mealObj = mealsArray.optJSONObject(j) ?: continue
                 val type = try {
-                    MealType.valueOf(mealObj.getString("type"))
+                    MealType.valueOf(mealObj.optString("type", "LUNCH"))
                 } catch (_: Exception) {
                     MealType.LUNCH
                 }
-                val recipeObj = mealObj.getJSONObject("recipe")
+                val recipeObj = mealObj.optJSONObject("recipe") ?: continue
                 val ingredients = mutableListOf<Ingredient>()
-                val ingArray = recipeObj.getJSONArray("ingredients")
-                for (k in 0 until ingArray.length()) {
-                    val ingObj = ingArray.getJSONObject(k)
-                    ingredients.add(
-                        Ingredient(
-                            ingObj.getString("name"),
-                            ingObj.optString("amount", "")
+                val ingArray = recipeObj.optJSONArray("ingredients")
+                if (ingArray != null) {
+                    for (k in 0 until ingArray.length()) {
+                        val ingObj = ingArray.optJSONObject(k) ?: continue
+                        ingredients.add(
+                            Ingredient(
+                                ingObj.optString("name", ""),
+                                ingObj.optString("amount", "")
+                            )
                         )
-                    )
+                    }
                 }
-                val steps = (0 until recipeObj.getJSONArray("steps").length())
-                    .map { k -> recipeObj.getJSONArray("steps").getString(k) }
+                val stepsArray = recipeObj.optJSONArray("steps")
+                val steps = if (stepsArray != null) {
+                    (0 until stepsArray.length()).map { k -> stepsArray.optString(k, "") }
+                } else {
+                    emptyList()
+                }
                 meals.add(
                     Meal(
                         type, DietRecipe(
-                            title = recipeObj.getString("title"),
+                            title = recipeObj.optString("title", ""),
                             ingredients = ingredients,
                             steps = steps,
-                            cookingTimeMin = recipeObj.getInt("cookingTimeMin"),
-                            calories = recipeObj.getInt("calories"),
-                            proteinG = recipeObj.getDouble("proteinG").toFloat(),
-                            carbsG = recipeObj.getDouble("carbsG").toFloat(),
-                            fatG = recipeObj.getDouble("fatG").toFloat()
+                            cookingTimeMin = recipeObj.optInt("cookingTimeMin", 0),
+                            calories = recipeObj.optInt("calories", 0),
+                            proteinG = recipeObj.optDouble("proteinG", 0.0).toFloat(),
+                            carbsG = recipeObj.optDouble("carbsG", 0.0).toFloat(),
+                            fatG = recipeObj.optDouble("fatG", 0.0).toFloat()
                         )
                     )
                 )
             }
             dailyPlans.add(
                 DailyMealPlan(
-                    dayIndex = dayObj.getInt("dayIndex"),
-                    dayLabel = dayObj.getString("dayLabel"),
-                    totalCalories = dayObj.getInt("totalCalories"),
+                    dayIndex = dayObj.optInt("dayIndex", 0),
+                    dayLabel = dayObj.optString("dayLabel", ""),
+                    totalCalories = dayObj.optInt("totalCalories", 0),
                     meals = meals,
                     notes = dayObj.optString("notes", "").ifEmpty { null }
                 )
             )
         }
-        return DietPlan(
+        DietPlan(
             id = UUID.randomUUID().toString(),
             generatedAt = System.currentTimeMillis(),
             userProfileSnapshot = profile,
             dailyPlans = dailyPlans,
-            totalCaloriesAvg = root.getInt("totalCaloriesAvg"),
-            nutritionSummary = root.getString("nutritionSummary")
+            totalCaloriesAvg = root.optInt("totalCaloriesAvg", 0),
+            nutritionSummary = root.optString("nutritionSummary", "")
+        )
+    } catch (e: Exception) {
+        Logger.e("DietPlanEngine", "Failed to parse AI response: ${e.message}", e)
+        DietPlan(
+            id = UUID.randomUUID().toString(),
+            generatedAt = System.currentTimeMillis(),
+            userProfileSnapshot = profile,
+            dailyPlans = emptyList(),
+            totalCaloriesAvg = 0,
+            nutritionSummary = ""
         )
     }
 
     private fun toEntity(plan: DietPlan): DietPlanEntity {
         val profileJson = JSONObject().apply {
+            put("spiceLevel", plan.userProfileSnapshot.spiceLevel)
+            put("saltLevel", plan.userProfileSnapshot.saltLevel)
+            put("oilLevel", plan.userProfileSnapshot.oilLevel)
+            put("excludedIngredients", JSONArray(plan.userProfileSnapshot.excludedIngredients.toList()))
+            put("preferredCategories", JSONArray(plan.userProfileSnapshot.preferredCategories.map { it.name }))
+            put("maxCookingTimeMin", plan.userProfileSnapshot.maxCookingTimeMin)
             put("age", plan.userProfileSnapshot.age)
+            put("heightCm", plan.userProfileSnapshot.heightCm)
+            put("weightKg", plan.userProfileSnapshot.weightKg.toDouble())
+            put("gender", plan.userProfileSnapshot.gender.name)
+            put("activityLevel", plan.userProfileSnapshot.activityLevel.name)
             put("goal", plan.userProfileSnapshot.goal.name)
+            put("mealsPerDay", plan.userProfileSnapshot.mealsPerDay)
+            plan.userProfileSnapshot.calorieTarget?.let { put("calorieTarget", it) }
+            put("allergies", JSONArray(plan.userProfileSnapshot.allergies.toList()))
         }.toString()
         val dailyArr = JSONArray()
         plan.dailyPlans.forEach { day ->
@@ -216,12 +252,54 @@ class DietPlanEngine @Inject constructor(
     }
 
     private fun toDomain(entity: DietPlanEntity): DietPlan {
+        val profileJson = JSONObject(entity.profileSnapshotJson)
+        val profile = UserProfile(
+            spiceLevel = profileJson.optInt("spiceLevel", 0),
+            saltLevel = profileJson.optInt("saltLevel", 1),
+            oilLevel = profileJson.optInt("oilLevel", 1),
+            excludedIngredients = profileJson.optJSONArray("excludedIngredients")?.let { arr ->
+                (0 until arr.length()).map { arr.getString(it) }.toSet()
+            } ?: emptySet(),
+            preferredCategories = profileJson.optJSONArray("preferredCategories")?.let { arr ->
+                (0 until arr.length()).map {
+                    try {
+                        RecipeCategory.valueOf(arr.getString(it))
+                    } catch (_: Exception) {
+                        RecipeCategory.HOME
+                    }
+                }.toSet()
+            } ?: emptySet(),
+            maxCookingTimeMin = profileJson.optInt("maxCookingTimeMin", 60),
+            age = profileJson.optInt("age", 25),
+            heightCm = profileJson.optInt("heightCm", 170),
+            weightKg = profileJson.optDouble("weightKg", 65.0).toFloat(),
+            gender = try {
+                Gender.valueOf(profileJson.optString("gender", "UNSPECIFIED"))
+            } catch (_: Exception) {
+                Gender.UNSPECIFIED
+            },
+            activityLevel = try {
+                ActivityLevel.valueOf(profileJson.optString("activityLevel", "MODERATE"))
+            } catch (_: Exception) {
+                ActivityLevel.MODERATE
+            },
+            goal = try {
+                HealthGoal.valueOf(profileJson.optString("goal", "EAT_HEALTHY"))
+            } catch (_: Exception) {
+                HealthGoal.EAT_HEALTHY
+            },
+            mealsPerDay = profileJson.optInt("mealsPerDay", 3),
+            calorieTarget = if (profileJson.has("calorieTarget")) profileJson.optInt("calorieTarget") else null,
+            allergies = profileJson.optJSONArray("allergies")?.let { arr ->
+                (0 until arr.length()).map { arr.getString(it) }.toSet()
+            } ?: emptySet()
+        )
         val root = JSONObject().apply {
             put("dailyPlans", JSONArray(entity.dailyPlansJson))
             put("totalCaloriesAvg", entity.totalCaloriesAvg)
             put("nutritionSummary", entity.nutritionSummary)
         }
-        return parseDietPlan(root.toString(), UserProfile()).copy(
+        return parseDietPlan(root.toString(), profile).copy(
             id = entity.id, generatedAt = entity.generatedAt
         )
     }
