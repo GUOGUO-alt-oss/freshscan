@@ -8,6 +8,7 @@ import com.example.freshscan.data.inference.EfficientDetEngine
 import com.example.freshscan.data.inference.TFLiteClassifier
 import com.example.freshscan.data.mapper.ModelMapper
 import com.example.freshscan.data.mapper.ModelMapperV2
+import com.example.freshscan.data.produce.ProduceInfoEngine
 import com.example.freshscan.data.recipe.RecipeEngine
 import com.example.freshscan.domain.model.DetectedItem
 import com.example.freshscan.domain.model.FreshnessLevel
@@ -52,6 +53,7 @@ class AnalysisViewModelTest {
     private lateinit var imagePreprocessor: ImagePreprocessor
     private lateinit var historyRepository: HistoryRepository
     private lateinit var recipeEngine: RecipeEngine
+    private lateinit var produceInfoEngine: ProduceInfoEngine
 
     @Before
     fun setUp() {
@@ -73,6 +75,7 @@ class AnalysisViewModelTest {
         imagePreprocessor = mockk(relaxed = true)
         historyRepository = mockk(relaxed = true)
         recipeEngine = mockk(relaxed = true)
+        produceInfoEngine = mockk(relaxed = true)
     }
 
     @After
@@ -92,7 +95,8 @@ class AnalysisViewModelTest {
             modelMapperFreshness = modelMapperFreshness,
             imagePreprocessor = imagePreprocessor,
             historyRepository = historyRepository,
-            recipeEngine = recipeEngine
+            recipeEngine = recipeEngine,
+            produceInfoEngine = produceInfoEngine
         )
     }
 
