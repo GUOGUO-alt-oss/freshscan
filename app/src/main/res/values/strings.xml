@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">鲜识</string>
+
+    <!-- Main Screen -->
+    <string name="guide_hint">将果蔬置于此处</string>
+    <string name="loading_ai_engine">正在准备 AI 引擎…</string>
+    <string name="camera_permission_required">需要相机权限才能识别果蔬新鲜度</string>
+    <string name="camera_in_use">相机被其他应用占用</string>
+    <string name="no_back_camera">未检测到后置摄像头</string>
+    <string name="camera_disconnected">相机已断开连接</string>
+    <string name="flashlight_on">关闭手电筒</string>
+    <string name="flashlight_off">打开手电筒</string>
+    <string name="save_result">保存结果</string>
+    <string name="saved">已保存</string>
+    <string name="retry">重试</string>
+
+    <!-- Detail Screen -->
+    <string name="detail_title">识别详情</string>
+    <string name="back">返回</string>
+    <string name="prediction_distribution">预测分布</string>
+    <string name="inference_time_format">推理耗时: %1$s</string>
+    <string name="not_found">未找到识别结果</string>
+
+    <!-- History Screen -->
+    <string name="history_title">识别历史</string>
+    <string name="no_history">还没有识别记录</string>
+    <string name="no_history_hint">打开相机，对准果蔬扫一扫\n新鲜度结果将自动保存在这里</string>
+    <string name="start_scanning">开始识别</string>
+    <string name="clear_all">清空</string>
+    <string name="clear_all_confirm">确定要删除所有识别历史吗？此操作不可撤销。</string>
+    <string name="delete">删除</string>
+    <string name="deleted">已删除</string>
+    <string name="clear_all_done">已清空全部记录</string>
+    <string name="confidence_label">置信度</string>
+    <string name="cancel">取消</string>
+    <string name="confirm">确定</string>
+
+    <!-- Freshness -->
+    <string name="freshness_fresh">新鲜</string>
+    <string name="freshness_rotten">腐烂</string>
+    <string name="freshness_uncertain">不确定</string>
+
+    <!-- Recommendations -->
+    <string name="recommend_fresh_title">✅ 保存建议</string>
+    <string name="recommend_rotten_title">⚠️ 食用建议</string>
+    <string name="recommend_uncertain_title">❓ 建议</string>
+    <string name="recommend_rotten_msg">该果蔬已出现腐烂迹象，不建议食用</string>
+
+    <!-- Guide -->
+    <string name="guide_title">将摄像头对准果蔬</string>
+    <string name="guide_subtitle">AI 会自动分析并显示新鲜度结果\n无需拍照，即见即所得</string>
+    <string name="guide_dismiss">点击任意位置开始</string>
+
+    <!-- Errors -->
+    <string name="error_model_missing">AI 模型文件丢失，请重新安装应用</string>
+    <string name="error_model_corrupt">AI 模型文件损坏，请重新安装应用</string>
+    <string name="error_oom">设备内存不足，请关闭其他应用后重试</string>
+    <string name="error_model_load_failed">AI 引擎启动失败: %1$s</string>
+    <string name="error_storage_full">存储空间不足，请清理设备后重试</string>
+    <string name="error_permission_denied">相机权限被拒绝，请在系统设置中授权</string>
+    <string name="error_photo_missing">照片文件丢失或损坏，请重新拍摄</string>
+    <string name="error_ai_engine_failed">AI 引擎加载失败，请重启应用后重试</string>
+    <string name="error_camera_unavailable">系统相机不可用，请检查相机权限</string>
+    <string name="error_analysis_failed">分析失败：%1$s</string>
+    <string name="error_unknown">未知错误，请重试</string>
+
+    <!-- v2 Bottom Navigation -->
+    <string name="bottom_nav_home">首页</string>
+    <string name="bottom_nav_history">历史</string>
+    <string name="bottom_nav_settings">我的</string>
+
+    <!-- v2 Analysis Screen -->
+    <string name="analysis_title">分析</string>
+    <string name="analysis_launching_camera">启动相机…</string>
+    <string name="analysis_loading_ai">正在加载 AI 引擎…</string>
+    <string name="analysis_ai_analyzing">AI 正在分析…</string>
+    <string name="analysis_identifying">识别果蔬 · 判断新鲜度</string>
+    <string name="analysis_detected_items">识别到 %1$d 个食材</string>
+    <string name="analysis_retake_photo">重新拍照</string>
+    <string name="analysis_find_recipes">找菜谱</string>
+    <string name="analysis_not_detected">未检测到果蔬</string>
+    <string name="analysis_adjust_angle">请调整角度，确保果蔬在画面中央</string>
+    <string name="analysis_retry_analysis">重试分析</string>
+    <string name="analysis_recipe_count">推荐菜谱 (%1$d)</string>
+    <string name="analysis_fresh_count">✅ %1$d 新鲜</string>
+    <string name="analysis_rotten_count">⚠️ %1$d 腐烂</string>
+
+    <!-- Difficulty labels -->
+    <string name="difficulty_easy">⭐ 简单</string>
+    <string name="difficulty_medium">⭐⭐ 中等</string>
+    <string name="difficulty_hard">⭐⭐⭐ 困难</string>
+
+    <!-- Recipe Engine messages -->
+    <string name="recipe_all_fruit_note">检测到的全是水果，建议直接食用 🍎</string>
+    <string name="recipe_data_missing">菜谱数据文件缺失，请更新应用</string>
+    <string name="recipe_data_empty">菜谱数据为空，请更新应用</string>
+    <string name="recipe_load_failed">菜谱数据加载失败：%1$s</string>
+    <string name="recipe_no_match">未找到匹配的菜谱，试试检测更多食材</string>
+    <string name="recipe_missing_items_2">还缺少：%1$s</string>
+    <string name="recipe_missing_items_n">需额外准备 %1$d 种食材</string>
+    <string name="recipe_temp_unavailable">菜谱推荐暂时不可用，请稍后重试</string>
+</resources>

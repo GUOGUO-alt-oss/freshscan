@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base theme for Compose-only app. Compose styling is handled in Theme.kt.
+         This XML theme is minimal — only used for the splash/startup window
+         before Compose takes over. -->
+    <style name="Theme.FreshScan" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>

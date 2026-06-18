@@ -1,0 +1,22 @@
+Test Accuracy: 0.9886 (98.86%)
+Test Loss: 0.1031
+
+                     precision    recall  f1-score   support
+
+ Apple_Crimson_Snow     1.0000    1.0000    1.0000       225
+       Apple_Golden     0.9958    0.9876    0.9917       485
+ Apple_Granny_Smith     1.0000    0.9024    0.9487       164
+Apple_Red_Delicious     1.0000    1.0000    1.0000        22
+    Apple_Pink_Lady     1.0000    1.0000    1.0000       152
+          Apple_Red     0.9925    0.9951    0.9938      3844
+     Apple_Braeburn     1.0000    0.8232    0.9030       164
+         Peach_Flat     0.0000    0.0000    0.0000         0
+    Peach_Nectarine     0.0000    0.0000    0.0000         0
+          Pear_Bosc     0.0000    0.0000    0.0000         0
+        Pomegranate     0.0000    0.0000    0.0000         0
+        Tomato_Pear     0.0000    0.0000    0.0000         0
+          Onion_Red     0.0000    0.0000    0.0000         0
+
+           accuracy                         0.9862      5056
+          macro avg     0.5376    0.5160    0.5259      5056
+       weighted avg     0.9939    0.9862    0.9897      5056

@@ -1,0 +1,20 @@
+# FreshScan v2.0 — Training Environment Requirements
+#
+# Install: pip install -r requirements.txt
+# GPU:      CUDA 11.8 + cuDNN 8.9 (TF 2.10 is last with native Windows GPU support)
+# Python:   3.10 (recommended; 3.11+ not supported by TF 2.10)
+
+# ── Core ML ──
+tensorflow==2.10.0          # CPU + GPU (Windows native GPU up to 2.10)
+numpy==1.24.3               # Pinned for TF 2.10 compatibility
+
+# ── Data & Utilities ──
+kagglehub>=0.1.0            # Kaggle dataset download API
+
+# ── Evaluation & Visualization ──
+matplotlib>=3.7.0           # Confusion matrix, training curves
+seaborn>=0.12.0             # Heatmap styling
+scikit-learn>=1.3.0         # Classification report, train/test split
+
+# ── TFLite Conversion (built into TF 2.10) ──
+# tensorflow.lite is included in tensorflow package — no extra install needed.

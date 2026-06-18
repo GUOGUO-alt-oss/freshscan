@@ -1,0 +1,43 @@
+# detekt configuration for FreshScan
+# Run: ./gradlew detekt
+
+build:
+  maxIssues: 50
+  excludeCorrectable: false
+
+style:
+  active: true
+  WildcardImport:
+    active: false
+  MagicNumber:
+    ignoreNumbers: ['-1', '0', '1', '2', '3', '4', '5', '100', '255', '1000']
+  ReturnCount:
+    max: 6
+  MaxLineLength:
+    max: 140
+
+complexity:
+  active: true
+  LongParameterList:
+    functionThreshold: 8
+    constructorThreshold: 8
+  TooManyFunctions:
+    thresholdInFiles: 20
+
+naming:
+  active: true
+  FunctionNaming:
+    ignoreAnnotated: ['Composable']
+
+exceptions:
+  active: true
+  TooGenericExceptionCaught:
+    active: false
+
+performance:
+  active: true
+
+comments:
+  active: true
+  EndOfSentenceFormat:
+    active: false
