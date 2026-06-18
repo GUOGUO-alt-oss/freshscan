@@ -36,3 +36,17 @@ annotation class FreshnessModel
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class RecipeJsonPath
+
+/**
+ * Qualifier for the AI service API key (from BuildConfig).
+ */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class AIApiKey
+
+/**
+ * Qualifier for the AI service base URL (DashScope endpoint).
+ */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class AIBaseUrl
