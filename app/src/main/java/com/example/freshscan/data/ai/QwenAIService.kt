@@ -45,6 +45,10 @@ class QwenAIService @Inject constructor(
             append(systemPrompt)
             append("\n\n【重要】请严格输出纯 JSON，" +
                    "不要包含 markdown 代码块标记（```json），只输出 JSON 对象本身。")
+            if (jsonSchema.isNotBlank()) {
+                append("\n\n【JSON Schema】请按以下 Schema 输出：\n")
+                append(jsonSchema)
+            }
         }
         return executeRequest(jsonSystemPrompt, userMessage, maxTokens = 4096, model = "qwen-plus")
     }
@@ -91,7 +95,9 @@ class QwenAIService @Inject constructor(
                 val errorBody = response.body?.string() ?: ""
                 Logger.e("QwenAIService", "API error ${response.code}: $errorBody")
                 when (response.code) {
-                    401, 403 -> return@withContext Result.failure(AIServiceError.QuotaExceeded())
+                    401, 403 -> return@withContext Result.failure(
+                        AIServiceError.UnknownError(IOException("API authentication failed (HTTP ${response.code})"))
+                    )
                     429 -> return@withContext Result.failure(AIServiceError.QuotaExceeded())
                     else -> return@withContext Result.failure(
                         AIServiceError.UnknownError(IOException("HTTP ${response.code}"))
@@ -141,6 +147,7 @@ class QwenAIService @Inject constructor(
                 put("parameters", JSONObject().apply {
                     put("max_tokens", maxTokens)
                     put("temperature", 0.7)
+                    put("top_p", 0.9)
                     put("result_format", "message")
                 })
             }.toString()
@@ -152,6 +159,8 @@ class QwenAIService @Inject constructor(
                 .build()
             val response = client.newCall(request).execute()
             parseResponse(response.body?.string() ?: "")
+        } catch (e: java.net.SocketTimeoutException) {
+            Result.failure(AIServiceError.TimeoutError())
         } catch (e: Exception) {
             Result.failure(AIServiceError.NetworkError(e))
         }
