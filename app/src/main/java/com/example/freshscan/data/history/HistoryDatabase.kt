@@ -20,9 +20,11 @@ import com.example.freshscan.util.Constants
     entities = [
         HistoryEntity::class,
         FavoriteRecipeEntity::class,
-        ShoppingItemEntity::class
+        ShoppingItemEntity::class,
+        UserProfileEntity::class,     // v3
+        DietPlanEntity::class         // v3
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 abstract class HistoryDatabase : RoomDatabase() {
@@ -34,6 +36,12 @@ abstract class HistoryDatabase : RoomDatabase() {
 
     /** 🆕 v2.0: Shopping list DAO. */
     abstract fun shoppingListDao(): ShoppingListDao
+
+    /** v3: User profile DAO. */
+    abstract fun userProfileDao(): UserProfileDao
+
+    /** v3: Diet plan DAO. */
+    abstract fun dietPlanDao(): DietPlanDao
 
     companion object {
         const val DATABASE_NAME = Constants.DATABASE_NAME
@@ -70,6 +78,47 @@ abstract class HistoryDatabase : RoomDatabase() {
                         amount TEXT NOT NULL DEFAULT '',
                         isChecked INTEGER NOT NULL DEFAULT 0,
                         addedAt INTEGER NOT NULL
+                    )
+                """)
+            }
+        }
+
+        /**
+         * Migration from v2 to v3:
+         * 1. Create user_profile table (singleton row for user preferences).
+         * 2. Create diet_plans table (AI-generated diet plans).
+         */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS user_profile (
+                        id INTEGER PRIMARY KEY NOT NULL DEFAULT 1,
+                        spiceLevel INTEGER NOT NULL DEFAULT 0,
+                        saltLevel INTEGER NOT NULL DEFAULT 1,
+                        oilLevel INTEGER NOT NULL DEFAULT 1,
+                        excludedIngredients TEXT NOT NULL DEFAULT '[]',
+                        preferredCategories TEXT NOT NULL DEFAULT '[]',
+                        maxCookingTimeMin INTEGER NOT NULL DEFAULT 60,
+                        age INTEGER NOT NULL DEFAULT 25,
+                        heightCm INTEGER NOT NULL DEFAULT 170,
+                        weightKg REAL NOT NULL DEFAULT 65.0,
+                        gender TEXT NOT NULL DEFAULT 'UNSPECIFIED',
+                        activityLevel TEXT NOT NULL DEFAULT 'MODERATE',
+                        goal TEXT NOT NULL DEFAULT 'EAT_HEALTHY',
+                        mealsPerDay INTEGER NOT NULL DEFAULT 3,
+                        calorieTarget INTEGER,
+                        allergies TEXT NOT NULL DEFAULT '[]'
+                    )
+                """)
+
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS diet_plans (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        generatedAt INTEGER NOT NULL,
+                        profileSnapshotJson TEXT NOT NULL,
+                        dailyPlansJson TEXT NOT NULL,
+                        totalCaloriesAvg INTEGER NOT NULL,
+                        nutritionSummary TEXT NOT NULL DEFAULT ''
                     )
                 """)
             }
