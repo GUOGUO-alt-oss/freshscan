@@ -66,6 +66,7 @@ import com.example.freshscan.domain.model.DetectedItem
 import com.example.freshscan.domain.model.FreshnessLevel
 import com.example.freshscan.domain.model.Recipe
 import com.example.freshscan.ui.components.ParticleScan
+import com.example.freshscan.ui.components.ProduceInfoSheet
 import java.io.File
 
 /**
@@ -86,6 +87,8 @@ fun AnalysisScreen(
     viewModel: AnalysisViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val selectedItemInfo by viewModel.selectedItemInfo.collectAsStateWithLifecycle()
+    val isInfoLoading by viewModel.isInfoLoading.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     // Hold the URI that was passed to the camera launcher.
@@ -260,10 +263,15 @@ fun AnalysisScreen(
             sheetState = uiState.sheetState,
             items = uiState.items,
             recipes = uiState.recipes,
+            selectedItemInfo = selectedItemInfo,
+            isInfoLoading = isInfoLoading,
             onRecipeClick = onNavigateToRecipe,
             onRetake = { viewModel.retake() },
             onStateChange = { viewModel.setSheetState(it) },
-            onFindRecipes = { viewModel.findRecipes() }
+            onFindRecipes = { viewModel.findRecipes() },
+            onItemClicked = { viewModel.onItemClicked(it) },
+            onClearSelectedItem = { viewModel.clearSelectedItem() },
+            onRetryAI = { viewModel.retryAIExtension() }
         )
     }
 }
@@ -294,10 +302,15 @@ private fun AnalysisBottomSheet(
     sheetState: SheetState,
     items: List<DetectedItem>,
     recipes: List<Recipe>,
+    selectedItemInfo: com.example.freshscan.domain.model.ProduceInfo?,
+    isInfoLoading: Boolean,
     onRecipeClick: (String) -> Unit,
     onRetake: () -> Unit,
     onStateChange: (SheetState) -> Unit,
     onFindRecipes: () -> Unit,
+    onItemClicked: (DetectedItem) -> Unit,
+    onClearSelectedItem: () -> Unit,
+    onRetryAI: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val modalSheetState = rememberModalBottomSheetState(
@@ -321,91 +334,106 @@ private fun AnalysisBottomSheet(
         // NO nestedScroll modifier — let ModalBottomSheet handle gestures internally
         dragHandle = { /* default drag handle */ }
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                // Minimum height ensures the sheet is tall enough to trigger
-                // drag gestures. Without this, short content won't differentiate
-                // between COLLAPSED and HALF states.
-                .defaultMinSize(minHeight = 400.dp)
-        ) {
-            // ── Header: item count + freshness summary ──
-            ResultsHeader(
-                items = items,
-                onFindRecipes = onFindRecipes,
-                modifier = Modifier.padding(horizontal = 16.dp)
+        if (selectedItemInfo != null) {
+            // ── Produce Info Sheet (shown when user taps a detected item) ──
+            ProduceInfoSheet(
+                info = selectedItemInfo!!,
+                isAIExtensionLoading = isInfoLoading,
+                onBack = onClearSelectedItem,
+                onRetryAI = onRetryAI,
+                modifier = Modifier.navigationBarsPadding()
             )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // ── Detected items list ──
-            // When items are few, we still want the LazyColumn to take space
-            // so drag gestures have surface area to work with.
-            if (items.isNotEmpty()) {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 120.dp, max = 400.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(
-                        horizontal = 16.dp,
-                        vertical = 4.dp
-                    )
-                ) {
-                    items(items, key = { it.id }) { item ->
-                        DetectedItemCard(item)
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // ── Recipe section (if any recipes loaded) ──
-            if (recipes.isNotEmpty()) {
-                Text(
-                    text = stringResource(R.string.analysis_recipe_count, recipes.size),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 120.dp, max = 400.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(
-                        horizontal = 16.dp,
-                        vertical = 4.dp
-                    )
-                ) {
-                    items(recipes, key = { it.id }) { recipe ->
-                        RecipeCard(recipe = recipe, onClick = { onRecipeClick(recipe.id) })
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // ── Action buttons (always visible at bottom) ──
-            Row(
+        } else {
+            // ── Normal results content ──
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    .navigationBarsPadding()
+                    // Minimum height ensures the sheet is tall enough to trigger
+                    // drag gestures. Without this, short content won't differentiate
+                    // between COLLAPSED and HALF states.
+                    .defaultMinSize(minHeight = 400.dp)
             ) {
-                OutlinedButton(
-                    onClick = onRetake,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(stringResource(R.string.analysis_retake_photo))
+                // ── Header: item count + freshness summary ──
+                ResultsHeader(
+                    items = items,
+                    onFindRecipes = onFindRecipes,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // ── Detected items list ──
+                // When items are few, we still want the LazyColumn to take space
+                // so drag gestures have surface area to work with.
+                if (items.isNotEmpty()) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 120.dp, max = 400.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(
+                            horizontal = 16.dp,
+                            vertical = 4.dp
+                        )
+                    ) {
+                        items(items, key = { it.id }) { item ->
+                            DetectedItemCard(
+                                item = item,
+                                onClick = { onItemClicked(item) }
+                            )
+                        }
+                    }
                 }
-                Button(
-                    onClick = onFindRecipes,
-                    modifier = Modifier.weight(1f)
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // ── Recipe section (if any recipes loaded) ──
+                if (recipes.isNotEmpty()) {
+                    Text(
+                        text = stringResource(R.string.analysis_recipe_count, recipes.size),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 120.dp, max = 400.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(
+                            horizontal = 16.dp,
+                            vertical = 4.dp
+                        )
+                    ) {
+                        items(recipes, key = { it.id }) { recipe ->
+                            RecipeCard(recipe = recipe, onClick = { onRecipeClick(recipe.id) })
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // ── Action buttons (always visible at bottom) ──
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text(stringResource(R.string.analysis_find_recipes))
+                    OutlinedButton(
+                        onClick = onRetake,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(stringResource(R.string.analysis_retake_photo))
+                    }
+                    Button(
+                        onClick = onFindRecipes,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(stringResource(R.string.analysis_find_recipes))
+                    }
                 }
             }
         }
@@ -538,7 +566,10 @@ private fun RecipeCard(
  * Single detected item card showing category, freshness, and confidence.
  */
 @Composable
-private fun DetectedItemCard(item: DetectedItem) {
+private fun DetectedItemCard(
+    item: DetectedItem,
+    onClick: (() -> Unit)? = null
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -546,6 +577,7 @@ private fun DetectedItemCard(item: DetectedItem) {
                 MaterialTheme.colorScheme.surfaceVariant,
                 RoundedCornerShape(12.dp)
             )
+            .clickable { onClick?.invoke() }
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

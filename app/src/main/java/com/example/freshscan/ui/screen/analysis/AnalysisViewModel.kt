@@ -15,10 +15,12 @@ import com.example.freshscan.data.inference.TFLiteClassifier
 import com.example.freshscan.data.mapper.LabelResult
 import com.example.freshscan.data.mapper.ModelMapper
 import com.example.freshscan.data.mapper.ModelMapperV2
+import com.example.freshscan.data.produce.ProduceInfoEngine
 import com.example.freshscan.data.recipe.RecipeEngine
 import com.example.freshscan.di.ModelV2
 import com.example.freshscan.di.FreshnessModel
 import com.example.freshscan.domain.model.DetectedItem
+import com.example.freshscan.domain.model.ProduceInfo
 import com.example.freshscan.domain.model.FreshnessLevel
 import com.example.freshscan.R
 import com.example.freshscan.domain.model.FruitCategory
@@ -82,7 +84,8 @@ class AnalysisViewModel @Inject constructor(
     private val modelMapperFreshness: ModelMapper,
     private val imagePreprocessor: ImagePreprocessor,
     private val historyRepository: HistoryRepository,
-    private val recipeEngine: RecipeEngine
+    private val recipeEngine: RecipeEngine,
+    private val produceInfoEngine: ProduceInfoEngine
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AnalysisUiState())
@@ -91,6 +94,14 @@ class AnalysisViewModel @Inject constructor(
     /** One-shot side-effect channel (e.g., navigation events). */
     private val _sideEffects = Channel<AnalysisSideEffect>(Channel.BUFFERED)
     val sideEffects: Flow<AnalysisSideEffect> = _sideEffects.receiveAsFlow()
+
+    /** Currently selected item's produce info (null when viewing results list). */
+    private val _selectedItemInfo = MutableStateFlow<ProduceInfo?>(null)
+    val selectedItemInfo: StateFlow<ProduceInfo?> = _selectedItemInfo.asStateFlow()
+
+    /** Whether the AI extension is still loading for the selected item. */
+    private val _isInfoLoading = MutableStateFlow(false)
+    val isInfoLoading: StateFlow<Boolean> = _isInfoLoading.asStateFlow()
 
     init {
         // Process Death recovery: if a photo URI was saved before the process
@@ -270,6 +281,53 @@ class AnalysisViewModel @Inject constructor(
      */
     fun setSheetState(state: SheetState) {
         _uiState.update { it.copy(sheetState = state) }
+    }
+
+    /**
+     * Load produce info for a tapped detected item.
+     * Emits core info (offline) immediately, then AI extension when network is available.
+     */
+    fun onItemClicked(item: DetectedItem) {
+        loadProduceInfo(item.label)
+    }
+
+    /** Clear the selected item info and return to the results list. */
+    fun clearSelectedItem() {
+        _selectedItemInfo.value = null
+        _isInfoLoading.value = false
+    }
+
+    /** Retry loading the AI extension for the currently selected item. */
+    fun retryAIExtension() {
+        val info = _selectedItemInfo.value ?: return
+        loadProduceInfo(info.label)
+    }
+
+    /**
+     * Load produce info from [ProduceInfoEngine] for a given label.
+     * Core info emits immediately; AI extension follows if network is available.
+     * If the flow completes without AI extension (network error), loading state
+     * is cleared so the UI shows the retry button.
+     */
+    private fun loadProduceInfo(label: String) {
+        viewModelScope.launch {
+            _isInfoLoading.value = true
+            try {
+                produceInfoEngine.getInfo(label).collect { info ->
+                    _selectedItemInfo.value = info
+                    // When AI extension fields arrive, stop the loading indicator
+                    if (info.selectionTips != null || info.pairingSuggestions != null || info.funFact != null) {
+                        _isInfoLoading.value = false
+                    }
+                }
+                // Flow completed normally but AI extension never arrived
+                // (e.g., network unavailable or AI error caught internally)
+                _isInfoLoading.value = false
+            } catch (e: Exception) {
+                Logger.e("AnalysisVM", "Failed to load produce info for: $label", e)
+                _isInfoLoading.value = false
+            }
+        }
     }
 
     override fun onCleared() {
