@@ -49,10 +49,14 @@ class QwenAIServiceTest {
 
         service = QwenAIService(apiKey = testApiKey, baseUrl = testBaseUrl)
 
-        // Replace the private OkHttpClient with our mock via reflection
+        // Replace both OkHttpClient fields with our mock via reflection
         val clientField = QwenAIService::class.java.getDeclaredField("client")
         clientField.isAccessible = true
         clientField.set(service, mockClient)
+
+        val longTimeoutField = QwenAIService::class.java.getDeclaredField("longTimeoutClient")
+        longTimeoutField.isAccessible = true
+        longTimeoutField.set(service, mockClient)
     }
 
     @After

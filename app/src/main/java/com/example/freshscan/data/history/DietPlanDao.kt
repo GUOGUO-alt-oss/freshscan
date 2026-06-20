@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
+@Deprecated("Replaced by MealHistoryDao")
 @Dao
 interface DietPlanDao {
     @Query("SELECT * FROM diet_plans ORDER BY generatedAt DESC LIMIT 1")

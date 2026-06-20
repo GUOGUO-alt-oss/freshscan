@@ -37,6 +37,9 @@ jobs:
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon
 
+      - name: Assemble Release (verify R8/ProGuard)
+        run: ./gradlew assembleRelease --no-daemon
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:

@@ -18,7 +18,7 @@ interface FavoriteRecipeDao {
 
     /** Check if a recipe is favorited. */
     @Query("SELECT EXISTS(SELECT 1 FROM favorite_recipes WHERE recipeId = :recipeId)")
-    fun isFavorited(recipeId: String): Boolean
+    suspend fun isFavorited(recipeId: String): Boolean
 
     /** Get a single favorite by recipe ID. */
     @Query("SELECT * FROM favorite_recipes WHERE recipeId = :recipeId")

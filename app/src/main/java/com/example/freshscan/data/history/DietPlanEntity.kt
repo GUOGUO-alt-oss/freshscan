@@ -3,6 +3,7 @@ package com.example.freshscan.data.history
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+@Deprecated("Replaced by MealHistoryEntity")
 @Entity(tableName = "diet_plans")
 data class DietPlanEntity(
     @PrimaryKey val id: String,

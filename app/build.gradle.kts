@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.detekt)
 }
 
 // Read API key from local.properties (never committed to VCS)
@@ -36,6 +37,18 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            val keystorePath = localProperties.getProperty("KEYSTORE_PATH", "")
+            if (keystorePath.isNotBlank()) {
+                storeFile = file(keystorePath)
+                storePassword = localProperties.getProperty("KEYSTORE_PASSWORD", "")
+                keyAlias = localProperties.getProperty("KEY_ALIAS", "")
+                keyPassword = localProperties.getProperty("KEY_PASSWORD", "")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             isMinifyEnabled = false
@@ -58,6 +71,10 @@ android {
                 logger.warn("⚠️  AI_API_KEY is not set in local.properties — release build will have no API key!")
             }
             buildConfigField("String", "AI_API_KEY", "\"${releaseKey}\"")
+            val keystorePath = localProperties.getProperty("KEYSTORE_PATH", "")
+            if (keystorePath.isNotBlank()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 

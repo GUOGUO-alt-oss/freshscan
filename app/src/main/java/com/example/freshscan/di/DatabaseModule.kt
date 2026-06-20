@@ -2,10 +2,10 @@ package com.example.freshscan.di
 
 import android.content.Context
 import androidx.room.Room
-import com.example.freshscan.data.history.DietPlanDao
 import com.example.freshscan.data.history.FavoriteRecipeDao
 import com.example.freshscan.data.history.HistoryDao
 import com.example.freshscan.data.history.HistoryDatabase
+import com.example.freshscan.data.history.MealHistoryDao
 import com.example.freshscan.data.history.ShoppingListDao
 import com.example.freshscan.data.history.UserProfileDao
 import dagger.Module
@@ -36,7 +36,7 @@ object DatabaseModule {
             HistoryDatabase::class.java,
             HistoryDatabase.DATABASE_NAME
         )
-            .addMigrations(HistoryDatabase.MIGRATION_1_2, HistoryDatabase.MIGRATION_2_3, HistoryDatabase.MIGRATION_3_4)
+            .addMigrations(HistoryDatabase.MIGRATION_1_2, HistoryDatabase.MIGRATION_2_3, HistoryDatabase.MIGRATION_3_4, HistoryDatabase.MIGRATION_4_5)
             .build()
     }
 
@@ -66,7 +66,7 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideDietPlanDao(database: HistoryDatabase): DietPlanDao {
-        return database.dietPlanDao()
+    fun provideMealHistoryDao(database: HistoryDatabase): MealHistoryDao {
+        return database.mealHistoryDao()
     }
 }

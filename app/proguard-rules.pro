@@ -17,6 +17,12 @@
 -dontwarn org.tensorflow.lite.gpu.**
 
 # ==========================================
+# MediaPipe Tasks Vision
+# ==========================================
+-keep class com.google.mediapipe.** { *; }
+-dontwarn com.google.mediapipe.**
+
+# ==========================================
 # Hilt / DI (compile-time processed, ensure reflection compat)
 # ==========================================
 -keep class dagger.hilt.** { *; }
@@ -38,9 +44,21 @@
 # ==========================================
 # OkHttp (v3 AI service)
 # ==========================================
--dontwarn okhttp3.**
+-dontwarn okhttp3.internal.platform.**
+-dontwarn org.conscrypt.**
+-dontwarn org.bouncycastle.**
+-dontwarn org.openjsse.**
 -dontwarn okio.**
--keep class okhttp3.** { *; }
+-keep class okhttp3.OkHttpClient { *; }
+-keep class okhttp3.Response { *; }
+-keep class okhttp3.Request { *; }
+-keep class okhttp3.ResponseBody { *; }
+-keep class okhttp3.MediaType { *; }
+-keep class okhttp3.RequestBody { *; }
+-keepclassmembers class okhttp3.** {
+    public *;
+}
+-keepattributes Signature
 
 # ==========================================
 # General optimizations

@@ -28,6 +28,13 @@ class QwenAIService @Inject constructor(
         .retryOnConnectionFailure(true)
         .build()
 
+    /** Longer-timeout client for complex requests like diet plan generation */
+    private val longTimeoutClient = OkHttpClient.Builder()
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(90, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(true)
+        .build()
+
     private val chatEndpoint = "${baseUrl}/services/aigc/text-generation/generation"
 
     private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
@@ -60,17 +67,27 @@ class QwenAIService @Inject constructor(
         model: String
     ): Result<String> = withContext(Dispatchers.IO) {
         val request = buildRequest(systemPrompt, userMessage, maxTokens, model)
+        // Use longer timeout client for complex models (qwen-plus etc.)
+        val httpClient = if (maxTokens > 1024) longTimeoutClient else client
         try {
-            executeOnce(request)
+            executeOnce(httpClient, request)
         } catch (e: java.net.SocketTimeoutException) {
-            Logger.e("QwenAIService", "Request timed out", e)
-            Result.failure(AIServiceError.TimeoutError())
+            Logger.e("QwenAIService", "Request timed out, retrying with longer timeout...", e)
+            // Retry once with the long-timeout client if we weren't already using it
+            try {
+                executeOnce(longTimeoutClient, request)
+            } catch (retryErr: java.net.SocketTimeoutException) {
+                Logger.e("QwenAIService", "Retry also timed out", retryErr)
+                Result.failure(AIServiceError.TimeoutError())
+            } catch (retryErr: Exception) {
+                Result.failure(AIServiceError.NetworkError(retryErr))
+            }
         } catch (e: IOException) {
             Logger.e("QwenAIService", "Network error", e)
             // Retry once for transient network errors
             try {
                 Logger.d("QwenAIService", "Retrying request after network error...")
-                executeOnce(request)
+                executeOnce(httpClient, request)
             } catch (retryErr: Exception) {
                 Result.failure(AIServiceError.NetworkError(e))
             }
@@ -123,8 +140,8 @@ class QwenAIService @Inject constructor(
      * Execute a single HTTP call and parse the response.
      * Throws on network errors; returns Result.failure for API-level errors.
      */
-    private fun executeOnce(request: Request): Result<String> {
-        val response = client.newCall(request).execute()
+    private fun executeOnce(httpClient: OkHttpClient, request: Request): Result<String> {
+        val response = httpClient.newCall(request).execute()
 
         if (!response.isSuccessful) {
             val errorBody = response.body?.string() ?: ""

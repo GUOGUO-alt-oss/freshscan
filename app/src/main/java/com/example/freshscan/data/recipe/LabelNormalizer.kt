@@ -31,6 +31,18 @@ class LabelNormalizer @Inject constructor(
     /** Cached mapping, lazy-loaded from JSON on first access (thread-safe). */
     private val defaultMapping: Map<String, List<String>> by lazy { loadMapping() }
 
+    /** Reverse map from displayName → first matching label's ingredients (for v1 fallback). */
+    private val displayNameMapping: Map<String, List<String>> by lazy {
+        config.labels
+            .filter { it.displayName.isNotBlank() }
+            .groupBy { it.displayName }
+            .mapValues { (_, entries) ->
+                // Find the first matching entry that has a normalization mapping
+                val firstLabel = entries.first().label
+                defaultMapping[firstLabel] ?: listOf(entries.first().displayName)
+            }
+    }
+
     /** Test-only override: when set, takes precedence over defaultMapping. */
     internal var mappingOverride: Map<String, List<String>>? = null
 
@@ -42,13 +54,17 @@ class LabelNormalizer @Inject constructor(
      *         Falls back to [displayName] if no mapping exists.
      */
     fun normalize(fruitLabel: String): List<String> {
-        return (mappingOverride ?: defaultMapping)[fruitLabel]
-            ?: listOf(
-                config.labels
-                    .find { it.label == fruitLabel }
-                    ?.displayName
-                    ?: fruitLabel
-            )
+        // 1. Direct mapping lookup (from normalization JSON)
+        (mappingOverride ?: defaultMapping)[fruitLabel]?.let { return it }
+
+        // 2. V2 label displayName fallback
+        val v2DisplayName = config.labels.find { it.label == fruitLabel }?.displayName
+        if (v2DisplayName != null) return listOf(v2DisplayName)
+
+        // 3. V2 displayName reverse lookup (handles v1 model raw labels like "potato")
+        displayNameMapping[fruitLabel]?.let { return it }
+
+        return listOf(fruitLabel)
     }
 
     // ─── Test Support ─────────────────────────────────────────────────────────

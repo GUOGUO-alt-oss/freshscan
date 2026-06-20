@@ -120,5 +120,226 @@
     ],
     "storageTips": "冷藏保存，用保鲜膜包裹防止失水。最佳食用期3-5天。",
     "seasonality": "6-8月"
+  },
+  {
+    "label": "土豆",
+    "displayName": "土豆",
+    "category": "蔬菜",
+    "intro": "土豆是茄科马铃薯属植物的块茎，原产于南美洲安第斯山区。是世界第四大粮食作物，富含淀粉和维生素C，烹饪方式多样。",
+    "nutrition": {
+      "caloriesKcal": 77,
+      "proteinG": 2.0,
+      "carbsG": 17.5,
+      "fatG": 0.1,
+      "fiberG": 2.2,
+      "vitaminCMg": 19.7,
+      "potassiumMg": 425,
+      "glycemicIndex": 78
+    },
+    "healthBenefits": [
+      "补充能量 — 富含淀粉和碳水化合物",
+      "维持电解质 — 钾含量极高",
+      "抗氧化 — 含花青素（紫薯尤甚）",
+      "促进消化 — 含膳食纤维和 resistant starch"
+    ],
+    "storageTips": "存放于阴凉通风处，避免阳光直射（防止变绿产生龙葵素）。不要冷藏，低温会使淀粉转化为糖。可保存2-4周。",
+    "seasonality": "全年"
+  },
+  {
+    "label": "甜椒",
+    "displayName": "甜椒",
+    "category": "蔬菜",
+    "intro": "甜椒是茄科辣椒属植物的变种，原产于中南美洲。维生素C含量极高，口感清脆微甜，是沙拉和炒菜的理想食材。",
+    "nutrition": {
+      "caloriesKcal": 31,
+      "proteinG": 1.0,
+      "carbsG": 6.0,
+      "fatG": 0.3,
+      "fiberG": 2.1,
+      "vitaminCMg": 127.7,
+      "vitaminAUg": 157,
+      "potassiumMg": 211,
+      "glycemicIndex": 40
+    },
+    "healthBenefits": [
+      "增强免疫力 — 维生素C含量是橙子的2-3倍",
+      "视力保护 — 富含β-胡萝卜素和叶黄素",
+      "抗氧化 — 含辣椒红素和类黄酮",
+      "低热量 — 适合减脂饮食"
+    ],
+    "storageTips": "冷藏保存，放入保鲜袋中。完整甜椒可保存1-2周。切开后用保鲜膜包裹，2-3天内食用。",
+    "seasonality": "5-10月"
+  },
+  {
+    "label": "苦瓜",
+    "displayName": "苦瓜",
+    "category": "蔬菜",
+    "intro": "苦瓜是葫芦科苦瓜属植物的果实，原产于热带亚洲。以独特的苦味著称，含苦瓜素和多种生物活性物质，是药食两用的健康蔬菜。",
+    "nutrition": {
+      "caloriesKcal": 17,
+      "proteinG": 1.0,
+      "carbsG": 3.7,
+      "fatG": 0.1,
+      "fiberG": 2.8,
+      "vitaminCMg": 84,
+      "vitaminAUg": 6,
+      "potassiumMg": 296,
+      "glycemicIndex": 24
+    },
+    "healthBenefits": [
+      "辅助控糖 — 含苦瓜素（植物胰岛素）",
+      "清热解毒 — 传统中医常用",
+      "增强免疫 — 高维生素C含量",
+      "促进食欲 — 苦味刺激消化液分泌"
+    ],
+    "storageTips": "冷藏保存，用纸巾包裹后放入保鲜袋。3-5天内食用，苦味会随时间加重。",
+    "seasonality": "5-9月"
+  },
+  {
+    "label": "秋葵",
+    "displayName": "秋葵",
+    "category": "蔬菜",
+    "intro": "秋葵是锦葵科秋葵属植物的嫩荚果，原产于非洲。以独特的黏液质地著称，富含可溶性膳食纤维和多种维生素。",
+    "nutrition": {
+      "caloriesKcal": 33,
+      "proteinG": 1.9,
+      "carbsG": 7.5,
+      "fatG": 0.1,
+      "fiberG": 3.2,
+      "vitaminCMg": 23,
+      "vitaminAUg": 36,
+      "potassiumMg": 299,
+      "glycemicIndex": 65
+    },
+    "healthBenefits": [
+      "肠道健康 — 黏液含可溶性膳食纤维",
+      "控制血糖 — 黏液可减缓糖分吸收",
+      "保护胃黏膜 — 黏液有润滑保护作用",
+      "补充叶酸 — 含量丰富，适合孕期食用"
+    ],
+    "storageTips": "冷藏保存，用纸袋或纸巾包裹保持干燥。2-3天内食用，存放过久会变硬。不要水洗后存放。",
+    "seasonality": "6-10月"
+  },
+  {
+    "label": "葡萄",
+    "displayName": "葡萄",
+    "category": "水果",
+    "intro": "葡萄是葡萄科葡萄属植物的果实，栽培历史超过8000年。富含花青素和白藜芦醇等抗氧化物质，既可鲜食也可酿酒。",
+    "nutrition": {
+      "caloriesKcal": 69,
+      "proteinG": 0.7,
+      "carbsG": 18.1,
+      "fatG": 0.2,
+      "fiberG": 0.9,
+      "vitaminCMg": 3.2,
+      "potassiumMg": 191,
+      "glycemicIndex": 59
+    },
+    "healthBenefits": [
+      "抗氧化 — 富含花青素和白藜芦醇",
+      "心血管保护 — 多酚类物质有益于血管弹性",
+      "抗炎 — 含花青素和槲皮素",
+      "促进消化 — 含有机酸和果糖"
+    ],
+    "storageTips": "冷藏保存，不要清洗后存放（水分会加速腐烂）。用保鲜袋密封可保存1-2周。食用前再清洗。",
+    "seasonality": "7-10月"
+  },
+  {
+    "label": "西瓜",
+    "displayName": "西瓜",
+    "category": "水果",
+    "intro": "西瓜是葫芦科西瓜属植物的果实，原产于非洲。含水量超过90%，是夏季消暑圣品，富含番茄红素和瓜氨酸。",
+    "nutrition": {
+      "caloriesKcal": 30,
+      "proteinG": 0.6,
+      "carbsG": 7.6,
+      "fatG": 0.2,
+      "fiberG": 0.4,
+      "vitaminCMg": 8.1,
+      "vitaminAUg": 28,
+      "potassiumMg": 112,
+      "glycemicIndex": 72
+    },
+    "healthBenefits": [
+      "补水消暑 — 含水量高达92%",
+      "抗氧化 — 富含番茄红素（红瓤西瓜）",
+      "缓解肌肉酸痛 — 含瓜氨酸",
+      "促进肾脏排水 — 天然利尿作用"
+    ],
+    "storageTips": "完整西瓜室温存放可保存1-2周。切开后用保鲜膜包好冷藏，24小时内食用。避免冷冻。",
+    "seasonality": "6-8月"
+  },
+  {
+    "label": "草莓",
+    "displayName": "草莓",
+    "category": "水果",
+    "intro": "草莓是蔷薇科草莓属植物的聚合果，原产于欧洲。以鲜艳的红色和香甜口感著称，维生素C含量丰富，被誉为"水果皇后"。",
+    "nutrition": {
+      "caloriesKcal": 32,
+      "proteinG": 0.7,
+      "carbsG": 7.7,
+      "fatG": 0.3,
+      "fiberG": 2.0,
+      "vitaminCMg": 58.8,
+      "potassiumMg": 153,
+      "glycemicIndex": 41
+    },
+    "healthBenefits": [
+      "美白抗氧化 — 维生素C和花青素丰富",
+      "抗炎 — 含鞣花酸和槲皮素",
+      "心血管保护 — 多酚类物质有益心脏",
+      "低升糖 — 适合糖尿病患者适量食用"
+    ],
+    "storageTips": "冷藏保存，不要清洗后存放。放入垫有纸巾的容器中，可保存3-5天。食用前再清洗，避免碰伤。",
+    "seasonality": "12-4月"
+  },
+  {
+    "label": "茄子",
+    "displayName": "茄子",
+    "category": "蔬菜",
+    "intro": "茄子是茄科茄属植物的果实，原产于印度。以紫色的光泽外皮和柔软的海绵质地著称，是中国家庭最常见的蔬菜之一。",
+    "nutrition": {
+      "caloriesKcal": 25,
+      "proteinG": 1.0,
+      "carbsG": 5.9,
+      "fatG": 0.1,
+      "fiberG": 3.0,
+      "vitaminCMg": 2.2,
+      "potassiumMg": 229,
+      "glycemicIndex": 15
+    },
+    "healthBenefits": [
+      "抗氧化 — 紫色外皮富含花青素（茄色素）",
+      "心血管保护 — 茄色素有助于血管弹性",
+      "低热量 — 非常适合减脂饮食",
+      "促进消化 — 膳食纤维含量丰富"
+    ],
+    "storageTips": "室温阴凉处保存，避免冷藏（低温易导致冷害变黑）。不要提前清洗。2-3天内食用。",
+    "seasonality": "5-9月"
+  },
+  {
+    "label": "胡萝卜",
+    "displayName": "胡萝卜",
+    "category": "蔬菜",
+    "intro": "胡萝卜是伞形科胡萝卜属植物的根茎，原产于中亚。以丰富的β-胡萝卜素著称，是重要的营养蔬菜，素有"小人参"之称。",
+    "nutrition": {
+      "caloriesKcal": 41,
+      "proteinG": 0.9,
+      "carbsG": 9.6,
+      "fatG": 0.2,
+      "fiberG": 2.8,
+      "vitaminCMg": 5.9,
+      "vitaminAUg": 835,
+      "potassiumMg": 320,
+      "glycemicIndex": 35
+    },
+    "healthBenefits": [
+      "保护视力 — β-胡萝卜素转化为维生素A",
+      "抗氧化 — 含β-胡萝卜素和α-胡萝卜素",
+      "增强免疫 — 维生素A维持黏膜屏障功能",
+      "促进皮肤健康 — 类胡萝卜素改善肤色"
+    ],
+    "storageTips": "冷藏保存，去掉叶子（叶子会吸收水分）。放入保鲜袋可保存2-3周。避免与苹果等释放乙烯的水果同放。",
+    "seasonality": "全年"
   }
 ]

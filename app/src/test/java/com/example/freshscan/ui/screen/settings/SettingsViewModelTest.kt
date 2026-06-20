@@ -5,8 +5,8 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.preferencesOf
-import com.example.freshscan.data.history.DietPlanDao
 import com.example.freshscan.data.history.HistoryDao
+import com.example.freshscan.data.history.MealHistoryDao
 import com.example.freshscan.util.Logger
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -35,7 +35,7 @@ class SettingsViewModelTest {
 
     private lateinit var dataStore: DataStore<Preferences>
     private lateinit var historyDao: HistoryDao
-    private lateinit var dietPlanDao: DietPlanDao
+    private lateinit var mealHistoryDao: MealHistoryDao
 
     private val preferencesFlow = MutableStateFlow<Preferences>(emptyPreferences())
 
@@ -51,7 +51,7 @@ class SettingsViewModelTest {
         }
 
         historyDao = mockk(relaxed = true)
-        dietPlanDao = mockk(relaxed = true)
+        mealHistoryDao = mockk(relaxed = true)
     }
 
     @After
@@ -64,7 +64,7 @@ class SettingsViewModelTest {
         return SettingsViewModel(
             dataStore = dataStore,
             historyDao = historyDao,
-            dietPlanDao = dietPlanDao
+            mealHistoryDao = mealHistoryDao
         )
     }
 
@@ -117,7 +117,7 @@ class SettingsViewModelTest {
     @Test
     fun `given both DAOs succeed when clearHistory called then both deleteAll invoked`() = runTest {
         coEvery { historyDao.deleteAll() } returns 0
-        coEvery { dietPlanDao.deleteAll() } returns Unit
+        coEvery { mealHistoryDao.deleteAll() } returns Unit
 
         val vm = createViewModel()
         advanceUntilIdle()
@@ -126,7 +126,7 @@ class SettingsViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { historyDao.deleteAll() }
-        coVerify(exactly = 1) { dietPlanDao.deleteAll() }
+        coVerify(exactly = 1) { mealHistoryDao.deleteAll() }
     }
 
     @Test
@@ -145,9 +145,9 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `given dietPlanDao throws when clearHistory called then no crash`() = runTest {
+    fun `given mealHistoryDao throws when clearHistory called then no crash`() = runTest {
         coEvery { historyDao.deleteAll() } returns 0
-        coEvery { dietPlanDao.deleteAll() } throws RuntimeException("IO error")
+        coEvery { mealHistoryDao.deleteAll() } throws RuntimeException("IO error")
 
         val vm = createViewModel()
         advanceUntilIdle()
@@ -155,7 +155,7 @@ class SettingsViewModelTest {
         vm.clearHistory()
         advanceUntilIdle()
 
-        coVerify(exactly = 1) { dietPlanDao.deleteAll() }
+        coVerify(exactly = 1) { mealHistoryDao.deleteAll() }
     }
 
     // ── DataStore read error ──
@@ -168,7 +168,7 @@ class SettingsViewModelTest {
         val vm = SettingsViewModel(
             dataStore = errorDataStore,
             historyDao = historyDao,
-            dietPlanDao = dietPlanDao
+            mealHistoryDao = mealHistoryDao
         )
         advanceUntilIdle()
 

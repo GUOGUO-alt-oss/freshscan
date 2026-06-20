@@ -61,19 +61,25 @@ fun ProduceInfoSheet(
                 label = { Text(info.category, style = MaterialTheme.typography.labelSmall) }
             )
         }
-        Text("时令：${info.seasonality}", style = MaterialTheme.typography.bodySmall)
+        if (info.seasonality.isNotBlank()) {
+            Text("时令：${info.seasonality}", style = MaterialTheme.typography.bodySmall)
+        }
 
         HorizontalDivider()
 
-        // Intro
-        SectionTitle("📖 简介")
-        Text(info.intro, style = MaterialTheme.typography.bodyMedium)
+        // Intro (only when non-empty)
+        if (info.intro.isNotBlank()) {
+            SectionTitle("📖 简介")
+            Text(info.intro, style = MaterialTheme.typography.bodyMedium)
+        }
 
-        // Nutrition
-        SectionTitle("📊 营养成分（每100g）")
-        NutritionGrid(info.nutrition)
+        // Nutrition (only when at least calories is non-zero)
+        if (info.nutrition.caloriesKcal > 0) {
+            SectionTitle("📊 营养成分（每100g）")
+            NutritionGrid(info.nutrition)
+        }
 
-        // Health Benefits
+        // Health Benefits (only when non-empty)
         if (info.healthBenefits.isNotEmpty()) {
             SectionTitle("💪 健康功效")
             info.healthBenefits.forEach { benefit ->
@@ -81,9 +87,11 @@ fun ProduceInfoSheet(
             }
         }
 
-        // Storage
-        SectionTitle("📦 保存方法")
-        Text(info.storageTips, style = MaterialTheme.typography.bodyMedium)
+        // Storage (only when non-empty)
+        if (info.storageTips.isNotBlank()) {
+            SectionTitle("📦 保存方法")
+            Text(info.storageTips, style = MaterialTheme.typography.bodyMedium)
+        }
 
         // AI Extension section
         HorizontalDivider()

@@ -22,6 +22,7 @@ espressoCore = "3.5.1"
 hilt-navigation-compose = "1.2.0"
 turbine = "1.0.0"
 org-json = "20231013"
+detekt = "1.23.7"
 
 [libraries]
 # AndroidX Core
@@ -93,3 +94,4 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }

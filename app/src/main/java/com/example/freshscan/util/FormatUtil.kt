@@ -10,10 +10,6 @@ import java.util.Locale
  */
 object FormatUtil {
 
-    private val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-    private val dateWithoutYearFormat = SimpleDateFormat("M月d日 HH:mm", Locale.getDefault())
-    private val fullDateFormat = SimpleDateFormat("yyyy年M月d日", Locale.getDefault())
-
     /**
      * Format a Unix timestamp (ms) to a human-readable relative time string.
      *
@@ -22,6 +18,9 @@ object FormatUtil {
     fun formatTimestamp(timestamp: Long): String {
         val now = System.currentTimeMillis()
         val diff = now - timestamp
+        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+        val dateWithoutYearFormat = SimpleDateFormat("M月d日 HH:mm", Locale.getDefault())
+        val fullDateFormat = SimpleDateFormat("yyyy年M月d日", Locale.getDefault())
 
         return when {
             diff < 60_000L -> "刚刚"

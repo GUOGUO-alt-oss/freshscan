@@ -2,8 +2,6 @@ package com.example.freshscan.data.inference.model
 
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * v2 category recognition model configuration (Fruits-360, 260 classes).
@@ -15,8 +13,7 @@ import javax.inject.Singleton
  * Training environment: see training/fruits360/ for dataset download and training scripts.
  * Model file: assets/model/fruits360_model.tflite (to be placed during M3).
  */
-@Singleton
-class ModelConfigV2 @Inject constructor(
+class ModelConfigV2(
     @ApplicationContext private val context: Context
 ) {
     /** Label info list, indexed by model output position. */

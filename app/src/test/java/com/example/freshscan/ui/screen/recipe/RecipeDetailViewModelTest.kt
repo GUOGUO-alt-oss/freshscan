@@ -59,7 +59,7 @@ class RecipeDetailViewModelTest {
 
         // Default stubs matching actual RecipeDetailViewModel.init behavior
         coEvery { recipeEngine.getRecipeById("test_recipe_1") } returns testRecipe
-        every { favoriteRecipeDao.isFavorited("test_recipe_1") } returns false
+        coEvery { favoriteRecipeDao.isFavorited("test_recipe_1") } returns false
         coEvery { favoriteRecipeDao.getById("test_recipe_1") } returns null
         every { favoriteRecipeDao.getAllFlow() } returns flowOf(emptyList())
         every { shoppingListDao.getAll() } returns flowOf(emptyList())

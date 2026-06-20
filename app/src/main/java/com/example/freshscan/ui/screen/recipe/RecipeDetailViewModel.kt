@@ -18,6 +18,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -217,18 +218,22 @@ class RecipeDetailViewModel @Inject constructor(
         val recipe = _uiState.value.recipe ?: return
         viewModelScope.launch {
             try {
+                val existingItems = shoppingListDao.getAll().first().map { it.name }.toSet()
+                var addedCount = 0
                 recipe.allIngredients.forEach { ingredient ->
-                    // Check if already in list to avoid duplicates
-                    shoppingListDao.insert(
-                        ShoppingItemEntity(
-                            name = ingredient.name,
-                            amount = ingredient.amount,
-                            isChecked = false,
-                            addedAt = System.currentTimeMillis()
+                    if (ingredient.name !in existingItems) {
+                        shoppingListDao.insert(
+                            ShoppingItemEntity(
+                                name = ingredient.name,
+                                amount = ingredient.amount,
+                                isChecked = false,
+                                addedAt = System.currentTimeMillis()
+                            )
                         )
-                    )
+                        addedCount++
+                    }
                 }
-                Logger.i("RecipeDetailVM", "Added ${recipe.allIngredients.size} items to shopping list")
+                Logger.i("RecipeDetailVM", "Added $addedCount new items to shopping list (${recipe.allIngredients.size - addedCount} skipped as duplicates)")
             } catch (e: Exception) {
                 Logger.e("RecipeDetailVM", "Failed to add to shopping list", e)
             }

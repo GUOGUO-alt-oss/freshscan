@@ -123,20 +123,72 @@ class ProduceInfoEngine @Inject constructor(
 
     private suspend fun fetchAIExtension(core: ProduceInfo): ProduceInfo = withContext(Dispatchers.IO) {
         val systemPrompt = "你是一名资深营养学家和食材专家。用简洁中文回答，严格遵循 JSON 格式。"
-        val userMessage = "请介绍：${core.displayName}（${core.category}，时令${core.seasonality}）"
+
+        val isCoreIncomplete = core.intro.isBlank() && core.nutrition.caloriesKcal == 0
+
+        val userMessage = if (isCoreIncomplete) {
+            """请提供「${core.displayName}」的以下信息，输出纯 JSON：
+{"intro": "50字简介", "nutrition": {"caloriesKcal": 0, "proteinG": 0.0, "carbsG": 0.0, "fatG": 0.0, "fiberG": 0.0, "potassiumMg": 0}, "storageTips": "保存方法", "seasonality": "时令月份", "selection_tips": "挑选技巧", "pairing": ["搭配1", "搭配2"], "fun_fact": "趣味知识"}
+（nutrition 中数值为每100g参考值，未知字段可省略）"""
+        } else {
+            "请介绍：${core.displayName}（${core.category}，时令${core.seasonality}）"
+        }
+
         val result = aiService.chatJson(systemPrompt, userMessage)
-        if (result.isSuccess) parseAIExtension(result.getOrThrow(), core) else core
+        if (result.isSuccess) parseAIExtension(result.getOrThrow(), core, isCoreIncomplete) else core
     }
 
-    private fun parseAIExtension(jsonStr: String, core: ProduceInfo): ProduceInfo = try {
+    private fun parseAIExtension(jsonStr: String, core: ProduceInfo, fillCoreFields: Boolean): ProduceInfo = try {
         val obj = JSONObject(jsonStr)
-        core.copy(
-            selectionTips = obj.optString("selection_tips", "").ifEmpty { null },
-            pairingSuggestions = obj.optJSONArray("pairing")?.let { arr ->
-                (0 until arr.length()).map { i -> arr.getString(i) }
-            },
-            funFact = obj.optString("fun_fact", "").ifEmpty { null }
-        )
+
+        // AI extension fields (always parsed)
+        val selectionTips = obj.optString("selection_tips", "").ifEmpty { null }
+        val pairingSuggestions = obj.optJSONArray("pairing")?.let { arr ->
+            (0 until arr.length()).map { i -> arr.getString(i) }
+        }
+        val funFact = obj.optString("fun_fact", "").ifEmpty { null }
+
+        if (fillCoreFields) {
+            // Merge AI-generated core info with the empty stub
+            val intro = obj.optString("intro", "").ifEmpty { core.intro }
+            val storageTips = obj.optString("storageTips", "").ifEmpty { core.storageTips }
+            val seasonality = obj.optString("seasonality", "").ifEmpty { core.seasonality }
+
+            val nutritionObj = obj.optJSONObject("nutrition")
+            val nutrition = if (nutritionObj != null) {
+                NutritionFacts(
+                    caloriesKcal = nutritionObj.optInt("caloriesKcal", 0),
+                    proteinG = nutritionObj.optDouble("proteinG", 0.0).toFloat(),
+                    carbsG = nutritionObj.optDouble("carbsG", 0.0).toFloat(),
+                    fatG = nutritionObj.optDouble("fatG", 0.0).toFloat(),
+                    fiberG = nutritionObj.optDouble("fiberG", 0.0).toFloat(),
+                    vitaminCMg = nutritionObj.optDouble("vitaminCMg", -1.0)
+                        .takeIf { it >= 0 }?.toFloat(),
+                    vitaminAUg = nutritionObj.optDouble("vitaminAUg", -1.0)
+                        .takeIf { it >= 0 }?.toFloat(),
+                    potassiumMg = nutritionObj.optDouble("potassiumMg", -1.0)
+                        .takeIf { it >= 0 }?.toFloat(),
+                    glycemicIndex = nutritionObj.optInt("glycemicIndex", -1)
+                        .takeIf { it >= 0 }
+                )
+            } else core.nutrition
+
+            core.copy(
+                intro = intro,
+                nutrition = nutrition,
+                storageTips = storageTips,
+                seasonality = seasonality,
+                selectionTips = selectionTips,
+                pairingSuggestions = pairingSuggestions,
+                funFact = funFact
+            )
+        } else {
+            core.copy(
+                selectionTips = selectionTips,
+                pairingSuggestions = pairingSuggestions,
+                funFact = funFact
+            )
+        }
     } catch (e: Exception) {
         Logger.w("ProduceInfoEngine", "Failed to parse AI extension: ${e.message}")
         core

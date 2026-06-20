@@ -15,7 +15,7 @@ import com.example.freshscan.data.inference.model.ModelConfig
 import com.example.freshscan.data.inference.model.ModelConfigV2
 import com.example.freshscan.data.mapper.ModelMapper
 import com.example.freshscan.data.mapper.ModelMapperV2
-import com.example.freshscan.data.produce.ProduceInfoEngine
+
 import com.example.freshscan.data.recipe.LabelNormalizer
 import com.example.freshscan.domain.common.ResourceProvider
 import com.example.freshscan.domain.common.UriInputStreamProvider
@@ -142,16 +142,6 @@ object AppModule {
         @AIApiKey apiKey: String,
         @AIBaseUrl baseUrl: String
     ): AIService = QwenAIService(apiKey, baseUrl)
-
-    // ─── v3: Produce Info ───
-
-    @Provides
-    @Singleton
-    fun provideProduceInfoEngine(
-        @ApplicationContext ctx: Context,
-        aiService: AIService,
-        labelNormalizer: LabelNormalizer
-    ): ProduceInfoEngine = ProduceInfoEngine(ctx, aiService, labelNormalizer)
 
     // ─── M8: Resource Abstractions ───
 

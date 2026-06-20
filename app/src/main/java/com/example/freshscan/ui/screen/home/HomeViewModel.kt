@@ -64,6 +64,11 @@ class HomeViewModel @Inject constructor(
         loadInitialData()
     }
 
+    /** Clear any displayed error message. */
+    fun clearError() {
+        _uiState.update { it.copy(errorMessage = null) }
+    }
+
     // ─── Private ─────────────────────────────────────────────────────────────
 
     private fun loadInitialData() {
@@ -88,6 +93,7 @@ class HomeViewModel @Inject constructor(
                 }
             }
         } catch (e: Exception) {
+            _uiState.update { it.copy(errorMessage = "加载扫描历史失败") }
             Logger.e("HomeVM", "Failed to load scan history", e)
         }
     }
@@ -97,6 +103,7 @@ class HomeViewModel @Inject constructor(
             val recipes = recipeEngine.getAllPresetRecipes()
             _uiState.update { it.copy(allRecipes = recipes) }
         } catch (e: Exception) {
+            _uiState.update { it.copy(errorMessage = "加载菜谱数据失败") }
             Logger.e("HomeVM", "Failed to load recipes", e)
         }
     }
@@ -116,7 +123,8 @@ data class HomeUiState(
     val lastScanItems: List<HistoryItem> = emptyList(),
     val lastScanTime: Long? = null,
     val selectedCategory: RecipeCategory? = null,
-    val allRecipes: List<Recipe> = emptyList()
+    val allRecipes: List<Recipe> = emptyList(),
+    val errorMessage: String? = null
 )
 
 // ─── Side Effects ────────────────────────────────────────────────────────────

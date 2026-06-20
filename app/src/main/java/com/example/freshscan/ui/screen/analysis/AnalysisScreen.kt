@@ -282,7 +282,8 @@ fun AnalysisScreen(
             onFindRecipes = { viewModel.findRecipes() },
             onItemClicked = { viewModel.onItemClicked(it) },
             onClearSelectedItem = { viewModel.clearSelectedItem() },
-            onRetryAI = { viewModel.retryAIExtension() }
+            onRetryAI = { viewModel.retryAIExtension() },
+            onDismiss = onNavigateBack
         )
     }
 }
@@ -322,6 +323,7 @@ private fun AnalysisBottomSheet(
     onItemClicked: (DetectedItem) -> Unit,
     onClearSelectedItem: () -> Unit,
     onRetryAI: () -> Unit,
+    onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val modalSheetState = rememberModalBottomSheetState(
@@ -340,7 +342,7 @@ private fun AnalysisBottomSheet(
     }
 
     ModalBottomSheet(
-        onDismissRequest = onRetake,
+        onDismissRequest = onDismiss,
         sheetState = modalSheetState,
         // NO nestedScroll modifier — let ModalBottomSheet handle gestures internally
         dragHandle = { /* default drag handle */ }

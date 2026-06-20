@@ -15,7 +15,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.outlined.Face
+import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -57,7 +57,7 @@ import com.example.freshscan.BuildConfig
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onNavigateToPersonalize: () -> Unit,
+    onNavigateToMealQuery: () -> Unit,
     onNavigateToShoppingList: () -> Unit,
     onNavigateBack: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
@@ -104,10 +104,10 @@ fun SettingsScreen(
             // ─── Recipe Preferences ───
             SectionHeader(title = "菜谱偏好")
             SettingsRow(
-                icon = Icons.Outlined.Face,
-                title = "个性化定制",
-                subtitle = "口味偏好 · 身体数据 · AI 饮食计划",
-                onClick = onNavigateToPersonalize
+                icon = Icons.Outlined.Restaurant,
+                title = "AI 膳食推荐",
+                subtitle = "智能推荐一日三餐",
+                onClick = onNavigateToMealQuery
             )
             SettingsRow(
                 icon = Icons.Filled.ShoppingCart,
@@ -145,7 +145,7 @@ fun SettingsScreen(
         AlertDialog(
             onDismissRequest = { showClearDialog = false },
             title = { Text("清除历史记录") },
-            text = { Text("确定要删除所有扫描记录吗？此操作不可撤销。") },
+            text = { Text("确定要删除所有扫描记录和膳食查询历史吗？此操作不可撤销。") },
             confirmButton = {
                 TextButton(onClick = {
                     showClearDialog = false

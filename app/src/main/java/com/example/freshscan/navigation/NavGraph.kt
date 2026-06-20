@@ -25,7 +25,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.example.freshscan.ui.screen.analysis.AnalysisScreen
-import com.example.freshscan.ui.screen.personalize.DietPlanScreen
+import com.example.freshscan.ui.screen.personalize.MealQueryScreen
 import com.example.freshscan.ui.screen.personalize.PersonalizeScreen
 import com.example.freshscan.ui.screen.detail.DetailScreen
 import com.example.freshscan.ui.screen.history.HistoryScreen
@@ -56,6 +56,9 @@ object Routes {
 
     // ── v3 新增 ──
     const val PERSONALIZE = "personalize"
+    const val MEAL_QUERY = "meal-query"
+
+    @Deprecated("Replaced by MEAL_QUERY")
     const val DIET_PLAN = "diet-plan"
 
     // ── v3 废弃 ──
@@ -163,8 +166,8 @@ fun AppNavGraph(navController: NavHostController) {
 
         composable(Routes.SETTINGS) {
             SettingsScreen(
-                onNavigateToPersonalize = {
-                    navController.navigate(Routes.PERSONALIZE)
+                onNavigateToMealQuery = {
+                    navController.navigate(Routes.MEAL_QUERY)
                 },
                 onNavigateToShoppingList = {
                     navController.navigate(Routes.SHOPPING_LIST)
@@ -216,17 +219,14 @@ fun AppNavGraph(navController: NavHostController) {
             PersonalizeScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToDietPlan = {
-                    navController.navigate(Routes.DIET_PLAN)
+                    navController.navigate(Routes.MEAL_QUERY)
                 }
             )
         }
 
-        composable(Routes.DIET_PLAN) {
-            DietPlanScreen(
-                onNavigateBack = { navController.popBackStack() },
-                onNavigateToShoppingList = {
-                    navController.navigate(Routes.SHOPPING_LIST)
-                }
+        composable(Routes.MEAL_QUERY) {
+            MealQueryScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 

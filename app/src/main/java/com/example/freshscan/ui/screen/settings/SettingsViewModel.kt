@@ -6,8 +6,8 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.freshscan.data.history.DietPlanDao
 import com.example.freshscan.data.history.HistoryDao
+import com.example.freshscan.data.history.MealHistoryDao
 import com.example.freshscan.util.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -33,7 +33,7 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     private val dataStore: DataStore<Preferences>,
     private val historyDao: HistoryDao,
-    private val dietPlanDao: DietPlanDao
+    private val mealHistoryDao: MealHistoryDao
 ) : ViewModel() {
 
     private val _isClassicMode = MutableStateFlow(false)
@@ -64,7 +64,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 historyDao.deleteAll()
-                dietPlanDao.deleteAll()
+                mealHistoryDao.deleteAll()
                 _clearHistoryResult.emit("历史记录已清除")
             } catch (e: Exception) {
                 _clearHistoryResult.emit("清除失败：${e.message ?: "未知错误"}")

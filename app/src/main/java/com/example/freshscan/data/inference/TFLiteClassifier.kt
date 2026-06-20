@@ -75,41 +75,33 @@ class TFLiteClassifier(
      * @throws IllegalStateException if model cannot be loaded.
      */
     fun classify(inputBuffer: ByteBuffer): FloatArray {
-        // Lazy load on first call
         ensureLoaded()
 
-        val currentInterpreter: Interpreter
-        val isGpu: Boolean
         synchronized(interpreterLock) {
-            currentInterpreter = interpreter ?: throw IllegalStateException(
+            val currentInterpreter = interpreter ?: throw IllegalStateException(
                 "Model $modelFileName not loaded"
             )
-            isGpu = useGpu
-        }
+            val output = Array(1) { FloatArray(numClasses) }
 
-        val output = Array(1) { FloatArray(numClasses) }
-
-        try {
-            currentInterpreter.run(inputBuffer, output)
-        } catch (e: Throwable) {
-            // If GPU delegate throws at runtime, close and mark for CPU rebuild
-            if (isGpu) {
-                Logger.w("TFLite", "GPU runtime error for $modelFileName, closing for CPU rebuild", e)
-                synchronized(interpreterLock) {
+            try {
+                currentInterpreter.run(inputBuffer, output)
+            } catch (e: Throwable) {
+                if (useGpu) {
+                    Logger.w("TFLite", "GPU runtime error for $modelFileName, closing for CPU rebuild", e)
                     useGpu = false
                     forceCpu = true
                     try { interpreter?.close() } catch (_: Throwable) { }
                     interpreter = null
+                    // Release lock before recursive call to avoid deadlock
+                    return classify(inputBuffer)
+                } else {
+                    Logger.e("TFLite", "Classification failed for $modelFileName", e)
+                    throw IllegalStateException("Classification failed: ${e.message}", e)
                 }
-                // Retry with CPU only
-                return classify(inputBuffer)
-            } else {
-                Logger.e("TFLite", "Classification failed for $modelFileName", e)
-                throw IllegalStateException("Classification failed: ${e.message}", e)
             }
-        }
 
-        return output[0]
+            return output[0]
+        }
     }
 
     /**

@@ -22,9 +22,10 @@ import com.example.freshscan.util.Constants
         FavoriteRecipeEntity::class,
         ShoppingItemEntity::class,
         UserProfileEntity::class,     // v3
-        DietPlanEntity::class         // v3
+        DietPlanEntity::class,        // v3
+        MealHistoryEntity::class      // v5
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 abstract class HistoryDatabase : RoomDatabase() {
@@ -40,8 +41,8 @@ abstract class HistoryDatabase : RoomDatabase() {
     /** v3: User profile DAO. */
     abstract fun userProfileDao(): UserProfileDao
 
-    /** v3: Diet plan DAO. */
-    abstract fun dietPlanDao(): DietPlanDao
+    /** v5: Meal history DAO. */
+    abstract fun mealHistoryDao(): MealHistoryDao
 
     companion object {
         const val DATABASE_NAME = Constants.DATABASE_NAME
@@ -152,9 +153,41 @@ abstract class HistoryDatabase : RoomDatabase() {
                         allergies TEXT NOT NULL DEFAULT '[]'
                     )
                 """.trimIndent())
-                db.execSQL("INSERT INTO user_profile_new SELECT * FROM user_profile WHERE id = 1")
+                db.execSQL("""
+                    INSERT INTO user_profile_new (id, spiceLevel, saltLevel, oilLevel, excludedIngredients,
+                        preferredCategories, maxCookingTimeMin, age, heightCm, weightKg, gender,
+                        activityLevel, goal, mealsPerDay, calorieTarget, allergies)
+                    SELECT id, spiceLevel, saltLevel, oilLevel, excludedIngredients,
+                        preferredCategories, maxCookingTimeMin, age, heightCm, weightKg, gender,
+                        activityLevel, goal, mealsPerDay, calorieTarget, allergies
+                    FROM user_profile WHERE id = 1
+                """.trimIndent())
                 db.execSQL("DROP TABLE user_profile")
                 db.execSQL("ALTER TABLE user_profile_new RENAME TO user_profile")
+            }
+        }
+
+        /**
+         * Migration from v4 to v5:
+         * Create meal_history table for single meal query history.
+         */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS meal_history (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        query TEXT NOT NULL,
+                        title TEXT NOT NULL,
+                        ingredientsJson TEXT NOT NULL,
+                        stepsJson TEXT NOT NULL,
+                        cookingTimeMin INTEGER NOT NULL,
+                        calories INTEGER NOT NULL,
+                        proteinG REAL NOT NULL,
+                        carbsG REAL NOT NULL,
+                        fatG REAL NOT NULL,
+                        generatedAt INTEGER NOT NULL
+                    )
+                """)
             }
         }
     }

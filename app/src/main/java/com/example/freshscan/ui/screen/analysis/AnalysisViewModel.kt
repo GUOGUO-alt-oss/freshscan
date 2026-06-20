@@ -34,6 +34,7 @@ import com.example.freshscan.domain.repository.HistoryRepository
 import com.example.freshscan.util.ImagePreprocessor
 import com.example.freshscan.util.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -108,6 +109,8 @@ class AnalysisViewModel @Inject constructor(
     /** Whether the AI extension is still loading for the selected item. */
     private val _isInfoLoading = MutableStateFlow(false)
     val isInfoLoading: StateFlow<Boolean> = _isInfoLoading.asStateFlow()
+
+    private var produceInfoJob: Job? = null
 
     init {
         // Process Death recovery: if a photo URI was saved before the process
@@ -291,7 +294,7 @@ class AnalysisViewModel @Inject constructor(
      * Emits core info (offline) immediately, then AI extension when network is available.
      */
     fun onItemClicked(item: DetectedItem) {
-        loadProduceInfo(item.label)
+        loadProduceInfo(item.displayName)
     }
 
     /** Clear the selected item info and return to the results list. */
@@ -303,7 +306,7 @@ class AnalysisViewModel @Inject constructor(
     /** Retry loading the AI extension for the currently selected item. */
     fun retryAIExtension() {
         val info = _selectedItemInfo.value ?: return
-        loadProduceInfo(info.label)
+        loadProduceInfo(info.displayName)
     }
 
     /**
@@ -313,7 +316,8 @@ class AnalysisViewModel @Inject constructor(
      * is cleared so the UI shows the retry button.
      */
     private fun loadProduceInfo(label: String) {
-        viewModelScope.launch {
+        produceInfoJob?.cancel()
+        produceInfoJob = viewModelScope.launch {
             _isInfoLoading.value = true
             try {
                 produceInfoEngine.getInfo(label).collect { info ->
@@ -394,7 +398,7 @@ class AnalysisViewModel @Inject constructor(
                 inPreferredConfig = Bitmap.Config.ARGB_8888  // sRGB-like, avoids wide-gamut
             }
 
-            val inputStream = uriInputStreamProvider.openInputStream(uri)
+            val inputStream = uriInputStreamProvider.openInputStream(uri.toString())
                 ?: return@withContext null
 
             val bitmap = BitmapFactory.decodeStream(inputStream, null, options)
