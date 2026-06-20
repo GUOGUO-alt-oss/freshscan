@@ -36,6 +36,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -112,10 +113,12 @@ fun HomeScreen(
         }
     ) { padding ->
         val hasHistory = uiState.lastScanItems.isNotEmpty()
-        val filteredRecipes = if (uiState.selectedCategory != null) {
-            uiState.allRecipes.filter { it.category == uiState.selectedCategory }
-        } else {
-            uiState.allRecipes
+        val filteredRecipes = remember(uiState.selectedCategory, uiState.allRecipes) {
+            if (uiState.selectedCategory != null) {
+                uiState.allRecipes.filter { it.category == uiState.selectedCategory }
+            } else {
+                uiState.allRecipes
+            }
         }
 
         if (uiState.allRecipes.isEmpty() && uiState.lastScanItems.isEmpty()) {

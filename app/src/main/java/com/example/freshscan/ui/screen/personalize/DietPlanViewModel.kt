@@ -7,9 +7,12 @@ import com.example.freshscan.data.history.ShoppingItemEntity
 import com.example.freshscan.data.history.ShoppingListDao
 import com.example.freshscan.data.history.UserProfileDao
 import com.example.freshscan.domain.model.*
+import com.example.freshscan.data.history.UserProfileMapper
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -32,6 +35,9 @@ class DietPlanViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<DietPlanUiState>(DietPlanUiState.Idle)
     val uiState: StateFlow<DietPlanUiState> = _uiState.asStateFlow()
 
+    private val _navigateToShoppingList = MutableSharedFlow<Unit>()
+    val navigateToShoppingList = _navigateToShoppingList.asSharedFlow()
+
     init {
         generatePlan()
     }
@@ -42,7 +48,7 @@ class DietPlanViewModel @Inject constructor(
             try {
                 val entity = userProfileDao.get().first()
                     ?: throw IllegalStateException("请先完善个性化档案")
-                val profile = entityToProfile(entity)
+                val profile = UserProfileMapper.toDomain(entity)
                 dietPlanEngine.generateWeekPlan(profile).collect { plan ->
                     _uiState.value = DietPlanUiState.Success(plan)
                 }
@@ -64,14 +70,18 @@ class DietPlanViewModel @Inject constructor(
     fun addMealToShoppingList(meal: Meal) {
         viewModelScope.launch {
             val now = System.currentTimeMillis()
+            val seen = mutableSetOf<String>()
             meal.recipe.ingredients.forEach { ingredient ->
-                shoppingListDao.insert(
-                    ShoppingItemEntity(
-                        name = ingredient.name,
-                        amount = ingredient.amount,
-                        addedAt = now
+                if (ingredient.name !in seen) {
+                    seen.add(ingredient.name)
+                    shoppingListDao.insert(
+                        ShoppingItemEntity(
+                            name = ingredient.name,
+                            amount = ingredient.amount,
+                            addedAt = now
+                        )
                     )
-                )
+                }
             }
         }
     }
@@ -96,52 +106,9 @@ class DietPlanViewModel @Inject constructor(
                             )
                         }
                     }
+                _navigateToShoppingList.emit(Unit)
             }
         }
     }
 
-    private fun entityToProfile(entity: com.example.freshscan.data.history.UserProfileEntity): UserProfile {
-        return UserProfile(
-            spiceLevel = entity.spiceLevel,
-            saltLevel = entity.saltLevel,
-            oilLevel = entity.oilLevel,
-            excludedIngredients = parseSet(entity.excludedIngredients),
-            preferredCategories = parseSet(entity.preferredCategories).mapNotNull {
-                try {
-                    RecipeCategory.valueOf(it)
-                } catch (_: Exception) {
-                    null
-                }
-            }.toSet(),
-            maxCookingTimeMin = entity.maxCookingTimeMin,
-            age = entity.age,
-            heightCm = entity.heightCm,
-            weightKg = entity.weightKg,
-            gender = try {
-                Gender.valueOf(entity.gender)
-            } catch (_: Exception) {
-                Gender.UNSPECIFIED
-            },
-            activityLevel = try {
-                ActivityLevel.valueOf(entity.activityLevel)
-            } catch (_: Exception) {
-                ActivityLevel.MODERATE
-            },
-            goal = try {
-                HealthGoal.valueOf(entity.goal)
-            } catch (_: Exception) {
-                HealthGoal.EAT_HEALTHY
-            },
-            mealsPerDay = entity.mealsPerDay,
-            calorieTarget = entity.calorieTarget,
-            allergies = parseSet(entity.allergies)
-        )
-    }
-
-    private fun parseSet(json: String): Set<String> = try {
-        val arr = org.json.JSONArray(json)
-        (0 until arr.length()).map { arr.getString(it) }.toSet()
-    } catch (_: Exception) {
-        emptySet()
-    }
 }

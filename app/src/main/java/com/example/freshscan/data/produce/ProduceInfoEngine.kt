@@ -33,7 +33,7 @@ class ProduceInfoEngine @Inject constructor(
         }
     )
 
-    @Volatile private var coreInfoCache: Map<String, ProduceInfo>? = null
+    private val coreInfoCache: Map<String, ProduceInfo> by lazy { loadCoreInfo() }
 
     /**
      * Get produce info for a raw label. Emits core info immediately,
@@ -60,14 +60,10 @@ class ProduceInfoEngine @Inject constructor(
     }
 
     fun getCoreInfo(categoryName: String): ProduceInfo {
-        return ensureCoreInfoLoaded()[categoryName]
+        return coreInfoCache[categoryName]
             ?: ProduceInfo(categoryName, categoryName, "", "",
                 NutritionFacts(0, 0f, 0f, 0f, 0f),
                 emptyList(), "", "")
-    }
-
-    private fun ensureCoreInfoLoaded(): Map<String, ProduceInfo> {
-        return coreInfoCache ?: loadCoreInfo().also { coreInfoCache = it }
     }
 
     private fun loadCoreInfo(): Map<String, ProduceInfo> = try {

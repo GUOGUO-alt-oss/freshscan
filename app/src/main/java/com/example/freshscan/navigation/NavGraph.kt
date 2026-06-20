@@ -230,7 +230,7 @@ fun AppNavGraph(navController: NavHostController) {
             )
         }
 
-        // Legacy: redirect TASTE_PROFILE to PERSONALIZE
+        // Legacy: redirect TASTE_PROFILE to PERSONALIZE (no visible frame)
         composable(Routes.TASTE_PROFILE) {
             LaunchedEffect(Unit) {
                 navController.navigate(Routes.PERSONALIZE) {

@@ -37,6 +37,7 @@ class TFLiteClassifier(
      *  floating-point variance can cause misclassification. */
     private val forceCpuInitial: Boolean = false
 ) {
+    @Volatile
     private var interpreter: Interpreter? = null
     private var useGpu: Boolean = false
     private var forceCpu: Boolean = forceCpuInitial

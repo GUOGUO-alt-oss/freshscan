@@ -42,8 +42,8 @@ class RecipeEngine @Inject constructor(
     @ApplicationContext private val context: Context,
     private val labelNormalizer: LabelNormalizer
 ) {
-    /** Cached preset recipes, lazy-loaded from JSON on first access. */
-    private var presetRecipes: List<Recipe>? = null
+    /** Cached preset recipes, lazy-loaded from JSON on first access (thread-safe). */
+    private val presetRecipes: List<Recipe> by lazy { loadRecipes() }
 
     // ─── Public API ──────────────────────────────────────────────────────────
 
@@ -77,11 +77,12 @@ class RecipeEngine @Inject constructor(
         val ingredientNames = cookable
             .flatMap { labelNormalizer.normalize(it.label) }
             .distinct()
+            .toSet()
 
         Logger.d("RecipeEngine", "Cookable: ${cookable.size}, ingredients: $ingredientNames")
 
         // Step 3: Score each recipe
-        val recipes = ensureLoaded()
+        val recipes = presetRecipes
         val scored = recipes.map { recipe ->
             val matchCount = recipe.matchIngredients.count { it in ingredientNames }
             val hasAllMatch = recipe.matchIngredients.isNotEmpty() &&
@@ -121,26 +122,17 @@ class RecipeEngine @Inject constructor(
      * @return The matching recipe, or null if not found.
      */
     suspend fun getRecipeById(id: String): Recipe? = withContext(Dispatchers.Default) {
-        ensureLoaded().find { it.id == id }
+        presetRecipes.find { it.id == id }
     }
 
     /**
      * Get all preset recipes (unsorted, for Home screen browsing).
      */
     suspend fun getAllPresetRecipes(): List<Recipe> = withContext(Dispatchers.Default) {
-        ensureLoaded()
+        presetRecipes
     }
 
     // ─── Private ─────────────────────────────────────────────────────────────
-
-    /**
-     * Ensure recipes are loaded from JSON, loading them if needed.
-     *
-     * @throws RecipeLoadException if the asset file is missing, corrupt, or empty.
-     */
-    private fun ensureLoaded(): List<Recipe> {
-        return presetRecipes ?: loadRecipes().also { presetRecipes = it }
-    }
 
     /**
      * Load and parse the preset_recipes.json asset.
@@ -249,7 +241,7 @@ class RecipeEngine @Inject constructor(
     /**
      * Build a note about missing ingredients for the top-ranked recipe.
      */
-    private fun buildNote(topRecipe: Recipe?, ingredientNames: List<String>): String? {
+    private fun buildNote(topRecipe: Recipe?, ingredientNames: Set<String>): String? {
         if (topRecipe == null) return context.getString(R.string.recipe_no_match)
         val missing = topRecipe.matchIngredients.filter { it !in ingredientNames }
         if (missing.isEmpty()) return null // Perfect match, no note needed

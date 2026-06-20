@@ -17,25 +17,11 @@ annotation class ModelV1
 annotation class ModelV2
 
 /**
- * Qualifier for the detection engine (EfficientDet-Lite0).
- */
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class DetectionModel
-
-/**
  * Qualifier for the freshness classifier (v1 MobileNetV3 18-class).
  */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class FreshnessModel
-
-/**
- * Qualifier for the recipe JSON file path in assets.
- */
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class RecipeJsonPath
 
 /**
  * Qualifier for the AI service API key (from BuildConfig).

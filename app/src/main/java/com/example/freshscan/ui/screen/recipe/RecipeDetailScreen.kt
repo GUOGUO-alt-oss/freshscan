@@ -54,6 +54,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -400,19 +402,13 @@ private fun CategoryChip(
     category: RecipeCategory,
     modifier: Modifier = Modifier
 ) {
-    val bgColor = when (category) {
-        RecipeCategory.HOME -> Color(0xFFE8F5E9)
-        RecipeCategory.QUICK -> Color(0xFFFFF3E0)
-        RecipeCategory.DIET -> Color(0xFFE3F2FD)
-        RecipeCategory.SOUP -> Color(0xFFFFF8E1)
-        RecipeCategory.COLD -> Color(0xFFF3E5F5)
-    }
-    val textColor = when (category) {
-        RecipeCategory.HOME -> Color(0xFF2E7D32)
-        RecipeCategory.QUICK -> Color(0xFFE65100)
-        RecipeCategory.DIET -> Color(0xFF1565C0)
-        RecipeCategory.SOUP -> Color(0xFFF9A825)
-        RecipeCategory.COLD -> Color(0xFF7B1FA2)
+    val colorScheme = MaterialTheme.colorScheme
+    val (bgColor, textColor) = when (category) {
+        RecipeCategory.HOME -> colorScheme.primaryContainer to colorScheme.onPrimaryContainer
+        RecipeCategory.QUICK -> colorScheme.tertiaryContainer to colorScheme.onTertiaryContainer
+        RecipeCategory.DIET -> colorScheme.secondaryContainer to colorScheme.onSecondaryContainer
+        RecipeCategory.SOUP -> colorScheme.errorContainer to colorScheme.onErrorContainer
+        RecipeCategory.COLD -> colorScheme.surfaceVariant to colorScheme.onSurfaceVariant
     }
 
     Text(
@@ -464,9 +460,15 @@ private fun IngredientsSection(
                         modifier = Modifier.weight(1f),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        val (statusSymbol, statusDesc) = when {
+                            ownedNames.isEmpty() -> "•" to "中性"
+                            isOwned -> "✅" to "已有"
+                            else -> "⬜" to "缺少"
+                        }
                         Text(
-                            text = if (ownedNames.isEmpty()) "•" else if (isOwned) "✅" else "⬜",
-                            style = MaterialTheme.typography.bodyMedium
+                            text = statusSymbol,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.semantics { contentDescription = statusDesc }
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(

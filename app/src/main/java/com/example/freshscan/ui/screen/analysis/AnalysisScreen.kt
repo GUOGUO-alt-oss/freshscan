@@ -123,8 +123,13 @@ fun AnalysisScreen(
 
     // Auto-launch camera whenever the screen enters Idle state.
     // Keyed on screenState so it re-fires on "retake" transitions back to Idle.
+    var cameraLaunchAttempts by remember { mutableStateOf(0) }
     LaunchedEffect(uiState.screenState) {
-        if (uiState.screenState == AnalysisScreenState.Idle) {
+        if (uiState.screenState == AnalysisScreenState.Idle && cameraLaunchAttempts < 3) {
+            cameraLaunchAttempts++
+            // Clean up leftover capture temp files before creating a new one
+            context.cacheDir.listFiles { f -> f.name.startsWith("freshscan_capture_") && f.name.endsWith(".jpg") }
+                ?.forEach { it.delete() }
             val file = File(
                 context.cacheDir,
                 "freshscan_capture_${System.currentTimeMillis()}.jpg"
@@ -136,6 +141,12 @@ fun AnalysisScreen(
             )
             pendingPhotoUri = uri
             cameraLauncher.launch(uri)
+        }
+    }
+
+    LaunchedEffect(uiState.screenState) {
+        if (uiState.screenState != AnalysisScreenState.Idle) {
+            cameraLaunchAttempts = 0
         }
     }
 

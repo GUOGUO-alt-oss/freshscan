@@ -22,21 +22,26 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.freshscan.BuildConfig
 
 /**
  * v2.0 Settings screen (the "My" tab in bottom navigation).
@@ -59,6 +64,14 @@ fun SettingsScreen(
 ) {
     val isClassicMode by viewModel.isClassicMode.collectAsStateWithLifecycle()
     var showClearDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(viewModel) {
+        viewModel.clearHistoryResult.collect { msg ->
+            snackbarHostState.showSnackbar(msg)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -68,7 +81,8 @@ fun SettingsScreen(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -119,7 +133,7 @@ fun SettingsScreen(
             SectionHeader(title = "关于")
             SettingsRow(
                 icon = Icons.Filled.Info,
-                title = "鲜识 v2.0",
+                title = "鲜识 v${BuildConfig.VERSION_NAME}",
                 subtitle = "模型: EfficientDet + MobileNetV3\n数据集: Fruits-360 (260类)",
                 onClick = {}
             )
@@ -135,7 +149,7 @@ fun SettingsScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showClearDialog = false
-                    // TODO: viewModel.clearHistory()
+                    viewModel.clearHistory()
                 }) {
                     Text("确定")
                 }

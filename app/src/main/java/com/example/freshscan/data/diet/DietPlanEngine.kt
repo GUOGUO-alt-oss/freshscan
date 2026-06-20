@@ -25,8 +25,12 @@ class DietPlanEngine @Inject constructor(
                 "严格遵循JSON格式输出，不要包含markdown标记。",
             userMessage = buildPrompt(profile)
         )
-        if (result.isFailure) throw result.exceptionOrNull()!!
+        if (result.isFailure) throw result.exceptionOrNull()
+            ?: IllegalStateException("AI service returned empty failure")
         val plan = parseDietPlan(result.getOrThrow(), profile)
+        // Auto-cleanup plans older than 90 days (L16)
+        val ninetyDaysAgo = System.currentTimeMillis() - 90L * 24 * 60 * 60 * 1000
+        dietPlanDao.deleteOlderThan(ninetyDaysAgo)
         dietPlanDao.insert(toEntity(plan))
         Logger.i("DietPlanEngine", "Plan generated: ${plan.id}")
         emit(plan)
@@ -80,10 +84,13 @@ class DietPlanEngine @Inject constructor(
     }
 
     private fun calculateTDEE(profile: UserProfile): Int {
-        val bmr = if (profile.gender == Gender.MALE)
-            10 * profile.weightKg + 6.25f * profile.heightCm - 5 * profile.age + 5
-        else
-            10 * profile.weightKg + 6.25f * profile.heightCm - 5 * profile.age - 161
+        val maleBMR = 10 * profile.weightKg + 6.25f * profile.heightCm - 5 * profile.age + 5
+        val femaleBMR = 10 * profile.weightKg + 6.25f * profile.heightCm - 5 * profile.age - 161
+        val bmr = when (profile.gender) {
+            Gender.MALE -> maleBMR
+            Gender.FEMALE -> femaleBMR
+            Gender.UNSPECIFIED -> (maleBMR + femaleBMR) / 2
+        }
         val tdee = bmr * profile.activityLevel.factor
         return when (profile.goal) {
             HealthGoal.LOSE_WEIGHT -> (tdee - 400).toInt()
@@ -94,71 +101,9 @@ class DietPlanEngine @Inject constructor(
 
     private fun parseDietPlan(jsonStr: String, profile: UserProfile): DietPlan = try {
         val root = JSONObject(jsonStr)
-        val dailyPlans = mutableListOf<DailyMealPlan>()
-        val dailyArray = root.optJSONArray("dailyPlans") ?: return DietPlan(
-            id = UUID.randomUUID().toString(),
-            generatedAt = System.currentTimeMillis(),
-            userProfileSnapshot = profile,
-            dailyPlans = emptyList(),
-            totalCaloriesAvg = 0,
-            nutritionSummary = ""
-        )
-        for (i in 0 until dailyArray.length()) {
-            val dayObj = dailyArray.optJSONObject(i) ?: continue
-            val meals = mutableListOf<Meal>()
-            val mealsArray = dayObj.optJSONArray("meals") ?: continue
-            for (j in 0 until mealsArray.length()) {
-                val mealObj = mealsArray.optJSONObject(j) ?: continue
-                val type = try {
-                    MealType.valueOf(mealObj.optString("type", "LUNCH"))
-                } catch (_: Exception) {
-                    MealType.LUNCH
-                }
-                val recipeObj = mealObj.optJSONObject("recipe") ?: continue
-                val ingredients = mutableListOf<Ingredient>()
-                val ingArray = recipeObj.optJSONArray("ingredients")
-                if (ingArray != null) {
-                    for (k in 0 until ingArray.length()) {
-                        val ingObj = ingArray.optJSONObject(k) ?: continue
-                        ingredients.add(
-                            Ingredient(
-                                ingObj.optString("name", ""),
-                                ingObj.optString("amount", "")
-                            )
-                        )
-                    }
-                }
-                val stepsArray = recipeObj.optJSONArray("steps")
-                val steps = if (stepsArray != null) {
-                    (0 until stepsArray.length()).map { k -> stepsArray.optString(k, "") }
-                } else {
-                    emptyList()
-                }
-                meals.add(
-                    Meal(
-                        type, DietRecipe(
-                            title = recipeObj.optString("title", ""),
-                            ingredients = ingredients,
-                            steps = steps,
-                            cookingTimeMin = recipeObj.optInt("cookingTimeMin", 0),
-                            calories = recipeObj.optInt("calories", 0),
-                            proteinG = recipeObj.optDouble("proteinG", 0.0).toFloat(),
-                            carbsG = recipeObj.optDouble("carbsG", 0.0).toFloat(),
-                            fatG = recipeObj.optDouble("fatG", 0.0).toFloat()
-                        )
-                    )
-                )
-            }
-            dailyPlans.add(
-                DailyMealPlan(
-                    dayIndex = dayObj.optInt("dayIndex", 0),
-                    dayLabel = dayObj.optString("dayLabel", ""),
-                    totalCalories = dayObj.optInt("totalCalories", 0),
-                    meals = meals,
-                    notes = dayObj.optString("notes", "").ifEmpty { null }
-                )
-            )
-        }
+        val dailyArray = root.optJSONArray("dailyPlans")
+            ?: throw DietPlanParseException("AI response missing 'dailyPlans' array")
+        val dailyPlans = parseDailyPlansArray(dailyArray)
         DietPlan(
             id = UUID.randomUUID().toString(),
             generatedAt = System.currentTimeMillis(),
@@ -167,16 +112,11 @@ class DietPlanEngine @Inject constructor(
             totalCaloriesAvg = root.optInt("totalCaloriesAvg", 0),
             nutritionSummary = root.optString("nutritionSummary", "")
         )
+    } catch (e: DietPlanParseException) {
+        throw e
     } catch (e: Exception) {
         Logger.e("DietPlanEngine", "Failed to parse AI response: ${e.message}", e)
-        DietPlan(
-            id = UUID.randomUUID().toString(),
-            generatedAt = System.currentTimeMillis(),
-            userProfileSnapshot = profile,
-            dailyPlans = emptyList(),
-            totalCaloriesAvg = 0,
-            nutritionSummary = ""
-        )
+        throw DietPlanParseException("无法解析AI生成的饮食计划", e)
     }
 
     private fun toEntity(plan: DietPlan): DietPlanEntity {
@@ -294,13 +234,86 @@ class DietPlanEngine @Inject constructor(
                 (0 until arr.length()).map { arr.getString(it) }.toSet()
             } ?: emptySet()
         )
-        val root = JSONObject().apply {
-            put("dailyPlans", JSONArray(entity.dailyPlansJson))
-            put("totalCaloriesAvg", entity.totalCaloriesAvg)
-            put("nutritionSummary", entity.nutritionSummary)
-        }
-        return parseDietPlan(root.toString(), profile).copy(
-            id = entity.id, generatedAt = entity.generatedAt
+        val dailyPlans = parseDailyPlansArray(JSONArray(entity.dailyPlansJson))
+        return DietPlan(
+            id = entity.id,
+            generatedAt = entity.generatedAt,
+            userProfileSnapshot = profile,
+            dailyPlans = dailyPlans,
+            totalCaloriesAvg = entity.totalCaloriesAvg,
+            nutritionSummary = entity.nutritionSummary
         )
     }
+
+    /**
+     * Parse a JSONArray of daily meal plan objects.
+     * Shared between parseDietPlan (AI response) and toDomain (DB entity).
+     */
+    private fun parseDailyPlansArray(dailyArray: JSONArray): List<DailyMealPlan> {
+        val result = mutableListOf<DailyMealPlan>()
+        for (i in 0 until dailyArray.length()) {
+            val dayObj = dailyArray.optJSONObject(i) ?: continue
+            val meals = mutableListOf<Meal>()
+            val mealsArray = dayObj.optJSONArray("meals") ?: continue
+            for (j in 0 until mealsArray.length()) {
+                val mealObj = mealsArray.optJSONObject(j) ?: continue
+                val type = try {
+                    MealType.valueOf(mealObj.optString("type", "LUNCH"))
+                } catch (_: Exception) {
+                    MealType.LUNCH
+                }
+                val recipeObj = mealObj.optJSONObject("recipe") ?: continue
+                val ingredients = mutableListOf<Ingredient>()
+                val ingArray = recipeObj.optJSONArray("ingredients")
+                if (ingArray != null) {
+                    for (k in 0 until ingArray.length()) {
+                        val ingObj = ingArray.optJSONObject(k) ?: continue
+                        ingredients.add(
+                            Ingredient(
+                                ingObj.optString("name", ""),
+                                ingObj.optString("amount", "")
+                            )
+                        )
+                    }
+                }
+                val stepsArray = recipeObj.optJSONArray("steps")
+                val steps = if (stepsArray != null) {
+                    (0 until stepsArray.length()).map { k -> stepsArray.optString(k, "") }
+                } else {
+                    emptyList()
+                }
+                meals.add(
+                    Meal(
+                        type, DietRecipe(
+                            title = recipeObj.optString("title", ""),
+                            ingredients = ingredients,
+                            steps = steps,
+                            cookingTimeMin = recipeObj.optInt("cookingTimeMin", 0),
+                            calories = recipeObj.optInt("calories", 0),
+                            proteinG = recipeObj.optDouble("proteinG", 0.0).toFloat(),
+                            carbsG = recipeObj.optDouble("carbsG", 0.0).toFloat(),
+                            fatG = recipeObj.optDouble("fatG", 0.0).toFloat()
+                        )
+                    )
+                )
+            }
+            result.add(
+                DailyMealPlan(
+                    dayIndex = dayObj.optInt("dayIndex", 0),
+                    dayLabel = dayObj.optString("dayLabel", ""),
+                    totalCalories = dayObj.optInt("totalCalories", 0),
+                    meals = meals,
+                    notes = dayObj.optString("notes", "").ifEmpty { null }
+                )
+            )
+        }
+        return result
+    }
 }
+
+/**
+ * Thrown when the AI-generated diet plan JSON cannot be parsed.
+ * Carries a user-friendly message suitable for UI display.
+ */
+class DietPlanParseException(message: String, cause: Throwable? = null) :
+    Exception(message, cause)

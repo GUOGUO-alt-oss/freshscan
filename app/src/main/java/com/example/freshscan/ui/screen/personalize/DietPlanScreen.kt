@@ -25,6 +25,12 @@ fun DietPlanScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    LaunchedEffect(viewModel) {
+        viewModel.navigateToShoppingList.collect {
+            onNavigateToShoppingList()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -38,7 +44,6 @@ fun DietPlanScreen(
                     if (uiState is DietPlanUiState.Success) {
                         IconButton(onClick = {
                             viewModel.addAllToShoppingList()
-                            onNavigateToShoppingList()
                         }) {
                             Icon(Icons.Filled.ShoppingCart, "全部加入购物清单")
                         }

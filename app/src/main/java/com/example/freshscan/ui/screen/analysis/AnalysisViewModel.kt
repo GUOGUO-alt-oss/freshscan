@@ -1,6 +1,5 @@
 package com.example.freshscan.ui.screen.analysis
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.RectF
@@ -8,6 +7,8 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.example.freshscan.data.history.UserProfileDao
+import com.example.freshscan.data.history.UserProfileMapper
 import com.example.freshscan.data.inference.DetectedBox
 import com.example.freshscan.data.inference.DetectionPostprocessor
 import com.example.freshscan.data.inference.EfficientDetEngine
@@ -19,6 +20,9 @@ import com.example.freshscan.data.produce.ProduceInfoEngine
 import com.example.freshscan.data.recipe.RecipeEngine
 import com.example.freshscan.di.ModelV2
 import com.example.freshscan.di.FreshnessModel
+import com.example.freshscan.domain.common.ResourceProvider
+import com.example.freshscan.domain.common.UriInputStreamProvider
+import com.example.freshscan.domain.model.BoundingBox
 import com.example.freshscan.domain.model.DetectedItem
 import com.example.freshscan.domain.model.ProduceInfo
 import com.example.freshscan.domain.model.FreshnessLevel
@@ -30,7 +34,6 @@ import com.example.freshscan.domain.repository.HistoryRepository
 import com.example.freshscan.util.ImagePreprocessor
 import com.example.freshscan.util.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,6 +43,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.withContext
 import java.util.UUID
@@ -75,7 +79,8 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class AnalysisViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
+    private val resourceProvider: ResourceProvider,
+    private val uriInputStreamProvider: UriInputStreamProvider,
     private val savedStateHandle: SavedStateHandle,
     private val efficientDet: EfficientDetEngine,
     @ModelV2 private val classifier260: TFLiteClassifier,
@@ -85,7 +90,8 @@ class AnalysisViewModel @Inject constructor(
     private val imagePreprocessor: ImagePreprocessor,
     private val historyRepository: HistoryRepository,
     private val recipeEngine: RecipeEngine,
-    private val produceInfoEngine: ProduceInfoEngine
+    private val produceInfoEngine: ProduceInfoEngine,
+    private val userProfileDao: UserProfileDao
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AnalysisUiState())
@@ -133,7 +139,6 @@ class AnalysisViewModel @Inject constructor(
                 photoUri = photoUri,
                 screenState = if (isModelReady()) AnalysisScreenState.Animating
                              else AnalysisScreenState.Loading,
-                isAnalyzing = true,
                 errorMessage = null,
                 items = emptyList()
             )
@@ -149,7 +154,7 @@ class AnalysisViewModel @Inject constructor(
 
                 // Load bitmap from URI with OOM protection
                 val bitmap = loadBitmap(photoUri)
-                    ?: throw IllegalStateException(context.getString(R.string.error_photo_missing))
+                    ?: throw IllegalStateException(resourceProvider.getString(R.string.error_photo_missing))
 
                 // Run 3-stage inference pipeline
                 val items = runInference(bitmap)
@@ -175,7 +180,6 @@ class AnalysisViewModel @Inject constructor(
                     it.copy(
                         items = items,
                         screenState = screenState,
-                        isAnalyzing = false,
                         errorMessage = null
                     )
                 }
@@ -194,8 +198,7 @@ class AnalysisViewModel @Inject constructor(
                     it.copy(
                         screenState = AnalysisScreenState.Error(
                             mapErrorToMessage(e)
-                        ),
-                        isAnalyzing = false
+                        )
                     )
                 }
             }
@@ -236,7 +239,7 @@ class AnalysisViewModel @Inject constructor(
                 Logger.e("AnalysisVM", "Recipe recommendation failed", e)
                 _uiState.update {
                     it.copy(
-                        recipeNote = context.getString(R.string.recipe_temp_unavailable)
+                        recipeNote = resourceProvider.getString(R.string.recipe_temp_unavailable)
                     )
                 }
             }
@@ -360,7 +363,7 @@ class AnalysisViewModel @Inject constructor(
             Logger.i("AnalysisVM", "Freshness classifier loaded")
         } catch (e: Exception) {
             Logger.e("AnalysisVM", "Failed to load freshness classifier", e)
-            throw IllegalStateException(context.getString(R.string.error_ai_engine_failed), e)
+            throw IllegalStateException(resourceProvider.getString(R.string.error_ai_engine_failed), e)
         }
     }
 
@@ -391,7 +394,7 @@ class AnalysisViewModel @Inject constructor(
                 inPreferredConfig = Bitmap.Config.ARGB_8888  // sRGB-like, avoids wide-gamut
             }
 
-            val inputStream = context.contentResolver.openInputStream(uri)
+            val inputStream = uriInputStreamProvider.openInputStream(uri)
                 ?: return@withContext null
 
             val bitmap = BitmapFactory.decodeStream(inputStream, null, options)
@@ -543,11 +546,11 @@ class AnalysisViewModel @Inject constructor(
                     displayName = labelResult.displayName,
                     freshnessLevel = freshness,
                     confidence = labelResult.confidence,
-                    bbox = RectF(
-                        box.rect.left / bitmap.width.toFloat(),
-                        box.rect.top / bitmap.height.toFloat(),
-                        box.rect.right / bitmap.width.toFloat(),
-                        box.rect.bottom / bitmap.height.toFloat()
+                    bbox = BoundingBox(
+                        left = box.rect.left / bitmap.width.toFloat(),
+                        top = box.rect.top / bitmap.height.toFloat(),
+                        right = box.rect.right / bitmap.width.toFloat(),
+                        bottom = box.rect.bottom / bitmap.height.toFloat()
                     ),
                     isCookable = labelResult.isCookable
                 )
@@ -565,11 +568,11 @@ class AnalysisViewModel @Inject constructor(
                     displayName = freshnessResult.fruitCategory.displayName,
                     freshnessLevel = freshnessResult.freshnessLevel,
                     confidence = freshnessResult.confidence,
-                    bbox = RectF(
-                        box.rect.left / bitmap.width.toFloat(),
-                        box.rect.top / bitmap.height.toFloat(),
-                        box.rect.right / bitmap.width.toFloat(),
-                        box.rect.bottom / bitmap.height.toFloat()
+                    bbox = BoundingBox(
+                        left = box.rect.left / bitmap.width.toFloat(),
+                        top = box.rect.top / bitmap.height.toFloat(),
+                        right = box.rect.right / bitmap.width.toFloat(),
+                        bottom = box.rect.bottom / bitmap.height.toFloat()
                     ),
                     isCookable = freshnessResult.fruitCategory.isCookable()
                 )
@@ -657,7 +660,17 @@ class AnalysisViewModel @Inject constructor(
      * The [RecipeEngine.recommend] handles null profile gracefully — it
      * simply skips category preference weighting.
      */
-    private suspend fun loadTasteProfile(): TasteProfile = TasteProfile()
+    private suspend fun loadTasteProfile(): TasteProfile {
+        val entity = userProfileDao.get().first() ?: return TasteProfile()
+        val profile = UserProfileMapper.toDomain(entity)
+        return TasteProfile(
+            spiceLevel = profile.spiceLevel,
+            saltLevel = profile.saltLevel,
+            oilLevel = profile.oilLevel,
+            excludedIngredients = profile.excludedIngredients,
+            preferredCategories = profile.preferredCategories
+        )
+    }
 
     // ─── Error Mapping ─────────────────────────────────────────────────────
 
@@ -672,24 +685,24 @@ class AnalysisViewModel @Inject constructor(
         return when {
             msg.contains("permission", ignoreCase = true) ||
             msg.contains("Permission") ->
-                context.getString(R.string.error_permission_denied)
+                resourceProvider.getString(R.string.error_permission_denied)
 
             msg.contains("无法加载照片") ->
-                context.getString(R.string.error_photo_missing)
+                resourceProvider.getString(R.string.error_photo_missing)
 
             msg.contains("AI 引擎加载失败") || msg.contains("模型") ->
-                context.getString(R.string.error_ai_engine_failed)
+                resourceProvider.getString(R.string.error_ai_engine_failed)
 
             msg.contains("OutOfMemory", ignoreCase = true) ||
             msg.contains("OOM") ->
-                context.getString(R.string.error_oom)
+                resourceProvider.getString(R.string.error_oom)
 
             msg.contains("FileProvider", ignoreCase = true) ->
-                context.getString(R.string.error_camera_unavailable)
+                resourceProvider.getString(R.string.error_camera_unavailable)
 
             else ->
-                context.getString(R.string.error_analysis_failed,
-                    e.message ?: context.getString(R.string.error_unknown))
+                resourceProvider.getString(R.string.error_analysis_failed,
+                    e.message ?: resourceProvider.getString(R.string.error_unknown))
         }
     }
 }

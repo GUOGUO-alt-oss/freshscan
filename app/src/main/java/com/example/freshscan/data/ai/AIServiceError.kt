@@ -5,6 +5,8 @@ sealed class AIServiceError(message: String) : Exception(message) {
         AIServiceError("网络连接失败，请检查网络后重试")
     class TimeoutError :
         AIServiceError("AI 响应超时，请稍后重试")
+    class AuthenticationError(cause: Throwable? = null) :
+        AIServiceError("AI 服务认证失败，请检查 API 密钥")
     class QuotaExceeded :
         AIServiceError("AI 服务额度已用完")
     class InvalidResponse(cause: String) :

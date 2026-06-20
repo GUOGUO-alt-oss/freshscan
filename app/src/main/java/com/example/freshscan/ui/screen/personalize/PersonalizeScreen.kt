@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -38,6 +39,11 @@ fun PersonalizeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    var showDiscardDialog by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = uiState.isDirty) {
+        showDiscardDialog = true
+    }
 
     LaunchedEffect(Unit) {
         viewModel.navigateToDietPlan.collect { onNavigateToDietPlan() }
@@ -46,6 +52,7 @@ fun PersonalizeScreen(
     LaunchedEffect(uiState.savedSuccessfully) {
         if (uiState.savedSuccessfully) {
             snackbarHostState.showSnackbar("保存成功")
+            viewModel.clearSaveFlag()
         }
     }
 
@@ -107,7 +114,9 @@ fun PersonalizeScreen(
                 suffix = { Text("岁") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                isError = uiState.age !in 1..150,
+                supportingText = { if (uiState.age !in 1..150) Text("请输入 1-150 之间的值") }
             )
             OutlinedTextField(
                 value = if (uiState.heightCm == 0) "" else uiState.heightCm.toString(),
@@ -116,7 +125,9 @@ fun PersonalizeScreen(
                 suffix = { Text("cm") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                isError = uiState.heightCm !in 30..300,
+                supportingText = { if (uiState.heightCm !in 30..300) Text("请输入 30-300 之间的值") }
             )
             OutlinedTextField(
                 value = if (uiState.weightKg == 0f) "" else uiState.weightKg.toString(),
@@ -125,7 +136,9 @@ fun PersonalizeScreen(
                 suffix = { Text("kg") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                isError = uiState.weightKg !in 1f..500f,
+                supportingText = { if (uiState.weightKg !in 1f..500f) Text("请输入 1-500 之间的值") }
             )
 
             HorizontalDivider()
@@ -164,6 +177,28 @@ fun PersonalizeScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
         }
+    }
+
+    // Discard changes confirmation dialog (L9)
+    if (showDiscardDialog) {
+        AlertDialog(
+            onDismissRequest = { showDiscardDialog = false },
+            title = { Text("放弃修改？") },
+            text = { Text("您有未保存的更改，确定要放弃吗？") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDiscardDialog = false
+                    onNavigateBack()
+                }) {
+                    Text("放弃")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardDialog = false }) {
+                    Text("取消")
+                }
+            }
+        )
     }
 }
 
@@ -212,7 +247,7 @@ private fun TripleOptionRow(label: String, options: List<String>, selected: Int,
 
 @Composable
 private fun ExcludedIngredientsSection(selected: Set<String>, onToggle: (String) -> Unit) {
-    val commonIngredients = listOf("花生", "乳糖", "海鲜", "辣椒", "大蒜", "香菜", "芹菜", "蘑菇")
+    val commonIngredients = PersonalizeConstants.COMMON_EXCLUDED_INGREDIENTS
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("饮食忌口:", style = MaterialTheme.typography.bodyMedium)
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -314,7 +349,7 @@ private fun NumberSliderRow(label: String, value: Int, range: IntRange, suffix: 
 
 @Composable
 private fun AllergyChips(selected: Set<String>, onToggle: (String) -> Unit) {
-    val commonAllergies = listOf("花生", "海鲜", "牛奶", "鸡蛋", "大豆", "小麦", "坚果", "芝麻")
+    val commonAllergies = PersonalizeConstants.COMMON_ALLERGENS
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("过敏原:", style = MaterialTheme.typography.bodyMedium)
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -328,4 +363,16 @@ private fun AllergyChips(selected: Set<String>, onToggle: (String) -> Unit) {
             }
         }
     }
+}
+
+/**
+ * Centralized constants for personalization screen options (L18).
+ */
+private object PersonalizeConstants {
+    val COMMON_EXCLUDED_INGREDIENTS = listOf(
+        "花生", "乳糖", "海鲜", "辣椒", "大蒜", "香菜", "芹菜", "蘑菇"
+    )
+    val COMMON_ALLERGENS = listOf(
+        "花生", "海鲜", "牛奶", "鸡蛋", "大豆", "小麦", "坚果", "芝麻"
+    )
 }

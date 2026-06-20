@@ -28,5 +28,6 @@ data class PersonalizeUiState(
     // UI state
     val isDirty: Boolean = false,
     val isSaving: Boolean = false,
-    val savedSuccessfully: Boolean = false
+    val savedSuccessfully: Boolean = false,
+    val errorMessage: String? = null
 )

@@ -7,7 +7,8 @@
         android:name="android.hardware.camera"
         android:required="false" />
 
-    <!-- No network permission needed — fully offline -->
+    <!-- v3: AI features (DashScope / Qwen) require network access -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:name=".FruitFreshnessApp"

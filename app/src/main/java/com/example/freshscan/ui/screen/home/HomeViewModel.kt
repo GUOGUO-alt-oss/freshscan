@@ -13,6 +13,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -75,19 +76,16 @@ class HomeViewModel @Inject constructor(
 
     private suspend fun loadLastScanResult() {
         try {
-            historyRepository.getHistory().collect { items ->
-                if (items.isNotEmpty()) {
-                    // Group by timestamp (same-second items = same scan)
-                    val latestTimestamp = items.first().timestamp
-                    val latestBatch = items.takeWhile { it.timestamp == latestTimestamp }
-                    _uiState.update {
-                        it.copy(
-                            lastScanItems = latestBatch,
-                            lastScanTime = latestTimestamp
-                        )
-                    }
+            val items = historyRepository.getHistory().first()
+            if (items.isNotEmpty()) {
+                val latestTimestamp = items.first().timestamp
+                val latestBatch = items.takeWhile { it.timestamp == latestTimestamp }
+                _uiState.update {
+                    it.copy(
+                        lastScanItems = latestBatch,
+                        lastScanTime = latestTimestamp
+                    )
                 }
-                return@collect  // only need first emission
             }
         } catch (e: Exception) {
             Logger.e("HomeVM", "Failed to load scan history", e)

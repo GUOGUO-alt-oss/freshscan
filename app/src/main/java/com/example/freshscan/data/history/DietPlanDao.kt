@@ -11,7 +11,7 @@ interface DietPlanDao {
     @Query("SELECT * FROM diet_plans ORDER BY generatedAt DESC LIMIT 1")
     suspend fun getLatest(): DietPlanEntity?
 
-    @Query("SELECT * FROM diet_plans ORDER BY generatedAt DESC")
+    @Query("SELECT * FROM diet_plans ORDER BY generatedAt DESC LIMIT 50")
     fun getAll(): Flow<List<DietPlanEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -22,4 +22,7 @@ interface DietPlanDao {
 
     @Query("DELETE FROM diet_plans")
     suspend fun deleteAll()
+
+    @Query("DELETE FROM diet_plans WHERE generatedAt < :timestamp")
+    suspend fun deleteOlderThan(timestamp: Long)
 }

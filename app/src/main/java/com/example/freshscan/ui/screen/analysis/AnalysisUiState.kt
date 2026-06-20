@@ -34,10 +34,7 @@ data class AnalysisUiState(
     val recipeNote: String? = null,
 
     /** Error message when analysis fails. */
-    val errorMessage: String? = null,
-
-    /** @deprecated Use [screenState] instead. Retained for compatibility. */
-    val isAnalyzing: Boolean = true
+    val errorMessage: String? = null
 )
 
 /** BottomSheet expansion states. */

@@ -7,8 +7,6 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.example.freshscan.BuildConfig
 import com.example.freshscan.data.ai.AIService
 import com.example.freshscan.data.ai.QwenAIService
-import com.example.freshscan.data.diet.DietPlanEngine
-import com.example.freshscan.data.history.DietPlanDao
 import com.example.freshscan.data.history.HistoryDao
 import com.example.freshscan.data.history.HistoryRepositoryImpl
 import com.example.freshscan.data.inference.ModelLoader
@@ -19,6 +17,8 @@ import com.example.freshscan.data.mapper.ModelMapper
 import com.example.freshscan.data.mapper.ModelMapperV2
 import com.example.freshscan.data.produce.ProduceInfoEngine
 import com.example.freshscan.data.recipe.LabelNormalizer
+import com.example.freshscan.domain.common.ResourceProvider
+import com.example.freshscan.domain.common.UriInputStreamProvider
 import com.example.freshscan.domain.repository.HistoryRepository
 import com.example.freshscan.util.ImagePreprocessor
 import dagger.Module
@@ -153,12 +153,13 @@ object AppModule {
         labelNormalizer: LabelNormalizer
     ): ProduceInfoEngine = ProduceInfoEngine(ctx, aiService, labelNormalizer)
 
-    // ─── v3: Diet Plan ───
+    // ─── M8: Resource Abstractions ───
 
     @Provides
     @Singleton
-    fun provideDietPlanEngine(
-        aiService: AIService,
-        dietPlanDao: DietPlanDao
-    ): DietPlanEngine = DietPlanEngine(aiService, dietPlanDao)
+    fun provideResourceProvider(impl: AndroidResourceProvider): ResourceProvider = impl
+
+    @Provides
+    @Singleton
+    fun provideUriInputStreamProvider(impl: AndroidUriInputStreamProvider): UriInputStreamProvider = impl
 }

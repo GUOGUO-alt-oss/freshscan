@@ -24,9 +24,10 @@
 -keep class * extends dagger.hilt.android.internal.managers.ViewComponentManager$FragmentContextWrapper { *; }
 
 # ==========================================
-# Room (generated classes)
+# Room (generated classes — entities + database only)
 # ==========================================
--keep class com.example.freshscan.data.history.** { *; }
+-keep @androidx.room.Entity class com.example.freshscan.data.history.** { *; }
+-keep class * extends androidx.room.RoomDatabase
 
 # ==========================================
 # Data classes (may be used reflectively)
@@ -35,16 +36,11 @@
 -keep class com.example.freshscan.ui.state.** { *; }
 
 # ==========================================
-# Compose
+# OkHttp (v3 AI service)
 # ==========================================
--keep class androidx.compose.** { *; }
--dontwarn androidx.compose.**
-
-# ==========================================
-# CameraX
-# ==========================================
--keep class androidx.camera.** { *; }
--dontwarn androidx.camera.**
+-dontwarn okhttp3.**
+-dontwarn okio.**
+-keep class okhttp3.** { *; }
 
 # ==========================================
 # General optimizations

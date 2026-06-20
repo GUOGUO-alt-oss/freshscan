@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.freshscan.data.history.UserProfileDao
 import com.example.freshscan.data.history.UserProfileEntity
+import com.example.freshscan.data.history.UserProfileMapper
 import com.example.freshscan.domain.model.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -11,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import javax.inject.Inject
@@ -32,10 +34,9 @@ class PersonalizeViewModel @Inject constructor(
 
     private fun loadProfile() {
         viewModelScope.launch {
-            userProfileDao.get().collect { entity ->
-                if (entity != null) {
-                    _uiState.value = entityToUiState(entity)
-                }
+            val entity = userProfileDao.get().first()
+            if (entity != null) {
+                _uiState.value = entityToUiState(entity)
             }
         }
     }
@@ -75,15 +76,24 @@ class PersonalizeViewModel @Inject constructor(
     }
 
     fun updateAge(age: Int) {
-        _uiState.value = _uiState.value.copy(age = age, isDirty = true)
+        _uiState.value = _uiState.value.copy(
+            age = age.coerceIn(1, 150),
+            isDirty = true
+        )
     }
 
     fun updateHeightCm(height: Int) {
-        _uiState.value = _uiState.value.copy(heightCm = height, isDirty = true)
+        _uiState.value = _uiState.value.copy(
+            heightCm = height.coerceIn(30, 300),
+            isDirty = true
+        )
     }
 
     fun updateWeightKg(weight: Float) {
-        _uiState.value = _uiState.value.copy(weightKg = weight, isDirty = true)
+        _uiState.value = _uiState.value.copy(
+            weightKg = weight.coerceIn(1f, 500f),
+            isDirty = true
+        )
     }
 
     fun updateGender(gender: Gender) {
@@ -118,16 +128,31 @@ class PersonalizeViewModel @Inject constructor(
 
     fun save() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isSaving = true)
-            val state = _uiState.value
-            val entity = uiStateToEntity(state)
-            userProfileDao.upsert(entity)
-            _uiState.value = _uiState.value.copy(
-                isSaving = false,
-                isDirty = false,
-                savedSuccessfully = true
-            )
+            _uiState.value = _uiState.value.copy(isSaving = true, errorMessage = null)
+            try {
+                val state = _uiState.value
+                val entity = uiStateToEntity(state)
+                userProfileDao.upsert(entity)
+                _uiState.value = _uiState.value.copy(
+                    isSaving = false,
+                    isDirty = false,
+                    savedSuccessfully = true
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isSaving = false,
+                    errorMessage = e.message ?: "保存失败，请重试"
+                )
+            }
         }
+    }
+
+    fun clearSaveFlag() {
+        _uiState.value = _uiState.value.copy(savedSuccessfully = false)
+    }
+
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(errorMessage = null)
     }
 
     fun onStartCustomization() {
@@ -160,47 +185,23 @@ class PersonalizeViewModel @Inject constructor(
     }
 
     private fun entityToUiState(entity: UserProfileEntity): PersonalizeUiState {
+        val domain = UserProfileMapper.toDomain(entity)
         return PersonalizeUiState(
-            spiceLevel = entity.spiceLevel,
-            saltLevel = entity.saltLevel,
-            oilLevel = entity.oilLevel,
-            excludedIngredients = parseJsonArray(entity.excludedIngredients),
-            preferredCategories = parseJsonArray(entity.preferredCategories).mapNotNull {
-                try {
-                    RecipeCategory.valueOf(it)
-                } catch (_: Exception) {
-                    null
-                }
-            }.toSet(),
-            maxCookingTimeMin = entity.maxCookingTimeMin,
-            age = entity.age,
-            heightCm = entity.heightCm,
-            weightKg = entity.weightKg,
-            gender = try {
-                Gender.valueOf(entity.gender)
-            } catch (_: Exception) {
-                Gender.UNSPECIFIED
-            },
-            activityLevel = try {
-                ActivityLevel.valueOf(entity.activityLevel)
-            } catch (_: Exception) {
-                ActivityLevel.MODERATE
-            },
-            goal = try {
-                HealthGoal.valueOf(entity.goal)
-            } catch (_: Exception) {
-                HealthGoal.EAT_HEALTHY
-            },
-            mealsPerDay = entity.mealsPerDay,
-            calorieTarget = entity.calorieTarget,
-            allergies = parseJsonArray(entity.allergies)
+            spiceLevel = domain.spiceLevel,
+            saltLevel = domain.saltLevel,
+            oilLevel = domain.oilLevel,
+            excludedIngredients = domain.excludedIngredients,
+            preferredCategories = domain.preferredCategories,
+            maxCookingTimeMin = domain.maxCookingTimeMin,
+            age = domain.age,
+            heightCm = domain.heightCm,
+            weightKg = domain.weightKg,
+            gender = domain.gender,
+            activityLevel = domain.activityLevel,
+            goal = domain.goal,
+            mealsPerDay = domain.mealsPerDay,
+            calorieTarget = domain.calorieTarget,
+            allergies = domain.allergies
         )
-    }
-
-    private fun parseJsonArray(json: String): Set<String> = try {
-        val arr = JSONArray(json)
-        (0 until arr.length()).map { arr.getString(it) }.toSet()
-    } catch (_: Exception) {
-        emptySet()
     }
 }

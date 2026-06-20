@@ -24,7 +24,7 @@ import com.example.freshscan.util.Constants
         UserProfileEntity::class,     // v3
         DietPlanEntity::class         // v3
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 abstract class HistoryDatabase : RoomDatabase() {
@@ -121,6 +121,40 @@ abstract class HistoryDatabase : RoomDatabase() {
                         nutritionSummary TEXT NOT NULL DEFAULT ''
                     )
                 """)
+            }
+        }
+
+        /**
+         * Migration from v3 to v4:
+         * Add CHECK(id = 1) constraint to user_profile to enforce singleton row.
+         * SQLite doesn't support ALTER TABLE ADD CONSTRAINT, so we recreate the table.
+         */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // SQLite doesn't support ALTER TABLE ADD CONSTRAINT, so recreate with CHECK
+                db.execSQL("""
+                    CREATE TABLE user_profile_new (
+                        id INTEGER PRIMARY KEY NOT NULL DEFAULT 1 CHECK(id = 1),
+                        spiceLevel INTEGER NOT NULL DEFAULT 0,
+                        saltLevel INTEGER NOT NULL DEFAULT 1,
+                        oilLevel INTEGER NOT NULL DEFAULT 1,
+                        excludedIngredients TEXT NOT NULL DEFAULT '[]',
+                        preferredCategories TEXT NOT NULL DEFAULT '[]',
+                        maxCookingTimeMin INTEGER NOT NULL DEFAULT 60,
+                        age INTEGER NOT NULL DEFAULT 25,
+                        heightCm INTEGER NOT NULL DEFAULT 170,
+                        weightKg REAL NOT NULL DEFAULT 65.0,
+                        gender TEXT NOT NULL DEFAULT 'UNSPECIFIED',
+                        activityLevel TEXT NOT NULL DEFAULT 'MODERATE',
+                        goal TEXT NOT NULL DEFAULT 'EAT_HEALTHY',
+                        mealsPerDay INTEGER NOT NULL DEFAULT 3,
+                        calorieTarget INTEGER,
+                        allergies TEXT NOT NULL DEFAULT '[]'
+                    )
+                """.trimIndent())
+                db.execSQL("INSERT INTO user_profile_new SELECT * FROM user_profile WHERE id = 1")
+                db.execSQL("DROP TABLE user_profile")
+                db.execSQL("ALTER TABLE user_profile_new RENAME TO user_profile")
             }
         }
     }

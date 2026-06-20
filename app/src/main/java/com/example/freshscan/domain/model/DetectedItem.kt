@@ -1,7 +1,5 @@
 package com.example.freshscan.domain.model
 
-import android.graphics.RectF
-
 /**
  * Domain model for a single detected item in v2 multi-object detection.
  *
@@ -29,7 +27,7 @@ data class DetectedItem(
     val confidence: Float,
 
     /** Normalized bounding box coordinates [0, 1]. */
-    val bbox: RectF,
+    val bbox: BoundingBox,
 
     /** Whether this item is cookable (true for vegetables, false for fruits). */
     val isCookable: Boolean

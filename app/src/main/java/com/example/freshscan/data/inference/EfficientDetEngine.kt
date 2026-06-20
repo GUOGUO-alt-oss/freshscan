@@ -91,9 +91,15 @@ class EfficientDetEngine @Inject constructor(
      * @throws IllegalStateException if model loading fails.
      */
     fun detect(bitmap: Bitmap): ObjectDetectorResult {
-        ensureLoaded()
-        val mpImage = BitmapImageBuilder(bitmap).build()
-        return objectDetector!!.detect(mpImage)
+        synchronized(loadLock) {
+            if (objectDetector == null) {
+                ensureLoaded()
+            }
+            val detector = objectDetector
+                ?: throw IllegalStateException("EfficientDet detector not available after loading")
+            val mpImage = BitmapImageBuilder(bitmap).build()
+            return detector.detect(mpImage)
+        }
     }
 
     /**
@@ -103,8 +109,10 @@ class EfficientDetEngine @Inject constructor(
      * will reload the model.
      */
     fun close() {
-        objectDetector?.close()
-        objectDetector = null
-        Logger.i("EfficientDet", "Detector closed")
+        synchronized(loadLock) {
+            objectDetector?.close()
+            objectDetector = null
+            Logger.i("EfficientDet", "Detector closed")
+        }
     }
 }

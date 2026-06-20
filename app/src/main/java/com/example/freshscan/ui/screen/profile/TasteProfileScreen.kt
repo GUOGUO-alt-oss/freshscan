@@ -58,11 +58,10 @@ import com.example.freshscan.domain.model.RecipeCategory
  * Persisted via DataStore Preferences in [TasteProfileViewModel].
  *
  * Wireframe: docs/03-UI设计规格-v2.md §4.5
+ *
+ * **v3.0:** Replaced by [PersonalizeScreen]. Retained for legacy
+ * TASTE_PROFILE → PERSONALIZE navigation redirect.
  */
-@Deprecated(
-    message = "Replaced by PersonalizeScreen in v3.0",
-    replaceWith = ReplaceWith("PersonalizeScreen")
-)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun TasteProfileScreen(

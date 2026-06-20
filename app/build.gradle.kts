@@ -1,9 +1,17 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+}
+
+// Read API key from local.properties (never committed to VCS)
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) load(file.inputStream())
 }
 
 android {
@@ -33,7 +41,7 @@ android {
             isMinifyEnabled = false
             isDebuggable = true
             buildConfigField("boolean", "ENABLE_VERBOSE_LOGGING", "true")
-            buildConfigField("String", "AI_API_KEY", "\"${findProperty("AI_API_KEY") ?: ""}\"")
+            buildConfigField("String", "AI_API_KEY", "\"${localProperties.getProperty("AI_API_KEY", "")}\"")
         }
 
         release {
@@ -45,13 +53,22 @@ android {
                 "proguard-rules.pro"
             )
             buildConfigField("boolean", "ENABLE_VERBOSE_LOGGING", "false")
-            buildConfigField("String", "AI_API_KEY", "\"${findProperty("AI_API_KEY") ?: ""}\"")
+            val releaseKey = localProperties.getProperty("AI_API_KEY", "")
+            if (releaseKey.isBlank()) {
+                logger.warn("⚠️  AI_API_KEY is not set in local.properties — release build will have no API key!")
+            }
+            buildConfigField("String", "AI_API_KEY", "\"${releaseKey}\"")
         }
     }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    // Show deprecation details in generated Hilt/Dagger Java code
+    tasks.withType(JavaCompile::class.java).configureEach {
+        options.compilerArgs.add("-Xlint:deprecation")
     }
 
     kotlinOptions {
@@ -144,7 +161,7 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
     testImplementation(libs.mockk)
-    testImplementation("org.json:json:20231013") // real org.json for JVM tests (Android stub is non-functional)
+    testImplementation(libs.org.json) // real org.json for JVM tests (Android stub is non-functional)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.compose.ui.test)

@@ -28,8 +28,11 @@ class LabelNormalizer @Inject constructor(
     @ApplicationContext private val context: Context,
     @ModelV2 private val config: ModelConfigV2
 ) {
-    /** Cached mapping, lazy-loaded from JSON on first access. */
-    private var mapping: Map<String, List<String>>? = null
+    /** Cached mapping, lazy-loaded from JSON on first access (thread-safe). */
+    private val defaultMapping: Map<String, List<String>> by lazy { loadMapping() }
+
+    /** Test-only override: when set, takes precedence over defaultMapping. */
+    internal var mappingOverride: Map<String, List<String>>? = null
 
     /**
      * Normalize a Fruits-360 label to recipe ingredient names.
@@ -39,7 +42,7 @@ class LabelNormalizer @Inject constructor(
      *         Falls back to [displayName] if no mapping exists.
      */
     fun normalize(fruitLabel: String): List<String> {
-        return ensureLoaded()[fruitLabel]
+        return (mappingOverride ?: defaultMapping)[fruitLabel]
             ?: listOf(
                 config.labels
                     .find { it.label == fruitLabel }
@@ -58,14 +61,10 @@ class LabelNormalizer @Inject constructor(
      * directly without needing real Android Context or assets.
      */
     internal fun setMappingForTest(mapping: Map<String, List<String>>) {
-        this.mapping = mapping
+        this.mappingOverride = mapping
     }
 
     // ─── Private ───────────────────────────────────────────────────────────────
-
-    private fun ensureLoaded(): Map<String, List<String>> {
-        return mapping ?: loadMapping().also { mapping = it }
-    }
 
     /**
      * Load the normalization mapping from an external JSON asset file.

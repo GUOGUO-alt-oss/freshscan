@@ -36,31 +36,36 @@ object DatabaseModule {
             HistoryDatabase::class.java,
             HistoryDatabase.DATABASE_NAME
         )
-            .addMigrations(HistoryDatabase.MIGRATION_1_2, HistoryDatabase.MIGRATION_2_3)
+            .addMigrations(HistoryDatabase.MIGRATION_1_2, HistoryDatabase.MIGRATION_2_3, HistoryDatabase.MIGRATION_3_4)
             .build()
     }
 
     @Provides
+    @Singleton
     fun provideHistoryDao(database: HistoryDatabase): HistoryDao {
         return database.historyDao()
     }
 
     @Provides
+    @Singleton
     fun provideFavoriteRecipeDao(database: HistoryDatabase): FavoriteRecipeDao {
         return database.favoriteRecipeDao()
     }
 
     @Provides
+    @Singleton
     fun provideShoppingListDao(database: HistoryDatabase): ShoppingListDao {
         return database.shoppingListDao()
     }
 
     @Provides
+    @Singleton
     fun provideUserProfileDao(database: HistoryDatabase): UserProfileDao {
         return database.userProfileDao()
     }
 
     @Provides
+    @Singleton
     fun provideDietPlanDao(database: HistoryDatabase): DietPlanDao {
         return database.dietPlanDao()
     }

@@ -59,54 +59,9 @@ class QwenAIService @Inject constructor(
         maxTokens: Int,
         model: String
     ): Result<String> = withContext(Dispatchers.IO) {
+        val request = buildRequest(systemPrompt, userMessage, maxTokens, model)
         try {
-            val requestBody = JSONObject().apply {
-                put("model", model)
-                put("input", JSONObject().apply {
-                    put("messages", JSONArray().apply {
-                        put(JSONObject().apply {
-                            put("role", "system")
-                            put("content", systemPrompt)
-                        })
-                        put(JSONObject().apply {
-                            put("role", "user")
-                            put("content", userMessage)
-                        })
-                    })
-                })
-                put("parameters", JSONObject().apply {
-                    put("max_tokens", maxTokens)
-                    put("temperature", 0.7)
-                    put("top_p", 0.9)
-                    put("result_format", "message")
-                })
-            }.toString()
-
-            val request = Request.Builder()
-                .url(chatEndpoint)
-                .addHeader("Authorization", "Bearer $apiKey")
-                .addHeader("Content-Type", "application/json")
-                .post(requestBody.toRequestBody(JSON_MEDIA_TYPE))
-                .build()
-
-            val response = client.newCall(request).execute()
-
-            if (!response.isSuccessful) {
-                val errorBody = response.body?.string() ?: ""
-                Logger.e("QwenAIService", "API error ${response.code}: $errorBody")
-                when (response.code) {
-                    401, 403 -> return@withContext Result.failure(
-                        AIServiceError.UnknownError(IOException("API authentication failed (HTTP ${response.code})"))
-                    )
-                    429 -> return@withContext Result.failure(AIServiceError.QuotaExceeded())
-                    else -> return@withContext Result.failure(
-                        AIServiceError.UnknownError(IOException("HTTP ${response.code}"))
-                    )
-                }
-            }
-
-            val responseBody = response.body?.string() ?: ""
-            parseResponse(responseBody)
+            executeOnce(request)
         } catch (e: java.net.SocketTimeoutException) {
             Logger.e("QwenAIService", "Request timed out", e)
             Result.failure(AIServiceError.TimeoutError())
@@ -115,7 +70,7 @@ class QwenAIService @Inject constructor(
             // Retry once for transient network errors
             try {
                 Logger.d("QwenAIService", "Retrying request after network error...")
-                retryRequest(systemPrompt, userMessage, maxTokens, model)
+                executeOnce(request)
             } catch (retryErr: Exception) {
                 Result.failure(AIServiceError.NetworkError(e))
             }
@@ -125,45 +80,68 @@ class QwenAIService @Inject constructor(
         }
     }
 
-    private suspend fun retryRequest(
+    /**
+     * Build an OkHttp [Request] for the DashScope chat API.
+     * Shared between initial call and retry — eliminates duplicate JSON construction.
+     */
+    private fun buildRequest(
         systemPrompt: String,
         userMessage: String,
         maxTokens: Int,
         model: String
-    ): Result<String> = withContext(Dispatchers.IO) {
-        try {
-            val requestBody = JSONObject().apply {
-                put("model", model)
-                put("input", JSONObject().apply {
-                    put("messages", JSONArray().apply {
-                        put(JSONObject().apply {
-                            put("role", "system"); put("content", systemPrompt)
-                        })
-                        put(JSONObject().apply {
-                            put("role", "user"); put("content", userMessage)
-                        })
+    ): Request {
+        val requestBody = JSONObject().apply {
+            put("model", model)
+            put("input", JSONObject().apply {
+                put("messages", JSONArray().apply {
+                    put(JSONObject().apply {
+                        put("role", "system")
+                        put("content", systemPrompt)
+                    })
+                    put(JSONObject().apply {
+                        put("role", "user")
+                        put("content", userMessage)
                     })
                 })
-                put("parameters", JSONObject().apply {
-                    put("max_tokens", maxTokens)
-                    put("temperature", 0.7)
-                    put("top_p", 0.9)
-                    put("result_format", "message")
-                })
-            }.toString()
-            val request = Request.Builder()
-                .url(chatEndpoint)
-                .addHeader("Authorization", "Bearer $apiKey")
-                .addHeader("Content-Type", "application/json")
-                .post(requestBody.toRequestBody(JSON_MEDIA_TYPE))
-                .build()
-            val response = client.newCall(request).execute()
-            parseResponse(response.body?.string() ?: "")
-        } catch (e: java.net.SocketTimeoutException) {
-            Result.failure(AIServiceError.TimeoutError())
-        } catch (e: Exception) {
-            Result.failure(AIServiceError.NetworkError(e))
+            })
+            put("parameters", JSONObject().apply {
+                put("max_tokens", maxTokens)
+                put("temperature", 0.7)
+                put("top_p", 0.9)
+                put("result_format", "message")
+            })
+        }.toString()
+
+        return Request.Builder()
+            .url(chatEndpoint)
+            .addHeader("Authorization", "Bearer $apiKey")
+            .post(requestBody.toRequestBody(JSON_MEDIA_TYPE))
+            .build()
+    }
+
+    /**
+     * Execute a single HTTP call and parse the response.
+     * Throws on network errors; returns Result.failure for API-level errors.
+     */
+    private fun executeOnce(request: Request): Result<String> {
+        val response = client.newCall(request).execute()
+
+        if (!response.isSuccessful) {
+            val errorBody = response.body?.string() ?: ""
+            Logger.e("QwenAIService", "API error ${response.code}: $errorBody")
+            return when (response.code) {
+                401, 403 -> Result.failure(
+                    AIServiceError.AuthenticationError(IOException("API authentication failed (HTTP ${response.code})"))
+                )
+                429 -> Result.failure(AIServiceError.QuotaExceeded())
+                else -> Result.failure(
+                    AIServiceError.UnknownError(IOException("HTTP ${response.code}"))
+                )
+            }
         }
+
+        val responseBody = response.body?.string() ?: ""
+        return parseResponse(responseBody)
     }
 
     private fun parseResponse(responseBody: String): Result<String> {

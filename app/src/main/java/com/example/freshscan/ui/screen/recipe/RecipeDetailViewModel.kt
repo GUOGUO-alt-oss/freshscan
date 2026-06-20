@@ -11,6 +11,8 @@ import com.example.freshscan.data.recipe.RecipeEngine
 import com.example.freshscan.domain.model.Recipe
 import com.example.freshscan.util.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
+import org.json.JSONArray
+import org.json.JSONObject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -91,6 +93,7 @@ class RecipeDetailViewModel @Inject constructor(
 
     /** Pause the active timer. */
     fun pauseTimer() {
+        timerJob?.cancel()
         _uiState.update { it.copy(timerState = TimerState.PAUSED) }
     }
 
@@ -98,6 +101,27 @@ class RecipeDetailViewModel @Inject constructor(
     fun resumeTimer() {
         if (_uiState.value.timerState == TimerState.PAUSED) {
             _uiState.update { it.copy(timerState = TimerState.RUNNING) }
+            val stepOrder = _uiState.value.activeTimerStep ?: return
+            val remaining = _uiState.value.timerRemainingSec
+            timerJob = viewModelScope.launch {
+                var sec = remaining
+                while (sec > 0 && _uiState.value.timerState == TimerState.RUNNING) {
+                    delay(1000L)
+                    sec--
+                    _uiState.update { prev ->
+                        if (sec <= 0) {
+                            prev.copy(
+                                timerRemainingSec = 0,
+                                timerState = TimerState.DONE,
+                                activeTimerStep = null,
+                                completedSteps = prev.completedSteps + stepOrder
+                            )
+                        } else {
+                            prev.copy(timerRemainingSec = sec)
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -135,12 +159,48 @@ class RecipeDetailViewModel @Inject constructor(
                     _uiState.update { it.copy(isFavorite = false) }
                 } else {
                     val recipe = current.recipe ?: return@launch
+                    val recipeJson = JSONObject().apply {
+                        put("id", recipe.id)
+                        put("title", recipe.title)
+                        put("category", recipe.category.name)
+                        put("difficulty", recipe.difficulty.name)
+                        put("cookingTimeMin", recipe.cookingTimeMin)
+                        put("matchIngredients", JSONArray(recipe.matchIngredients))
+                        put("allIngredients", JSONArray().apply {
+                            recipe.allIngredients.forEach { ing ->
+                                put(JSONObject().apply {
+                                    put("name", ing.name)
+                                    put("amount", ing.amount)
+                                })
+                            }
+                        })
+                        put("steps", JSONArray().apply {
+                            recipe.steps.forEach { step ->
+                                put(JSONObject().apply {
+                                    put("order", step.order)
+                                    put("text", step.text)
+                                    put("timerSec", step.timerSec)
+                                })
+                            }
+                        })
+                        put("nutrition", JSONObject().apply {
+                            put("calories", recipe.nutrition.calories)
+                            put("protein", recipe.nutrition.protein)
+                            put("carbs", recipe.nutrition.carbs)
+                            put("fat", recipe.nutrition.fat)
+                            put("fiber", recipe.nutrition.fiber)
+                        })
+                        put("tags", JSONArray(recipe.tags))
+                        put("tips", recipe.tips)
+                        put("imageAsset", recipe.imageAsset)
+                        put("thumbnailAsset", recipe.thumbnailAsset)
+                    }
                     favoriteRecipeDao.insert(
                         FavoriteRecipeEntity(
                             recipeId = recipeId,
                             title = recipe.title,
                             category = recipe.category.name,
-                            jsonData = "",  // TODO: serialize full Recipe to JSON
+                            jsonData = recipeJson.toString(),
                             favoritedAt = System.currentTimeMillis()
                         )
                     )
