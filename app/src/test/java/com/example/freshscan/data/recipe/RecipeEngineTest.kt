@@ -353,7 +353,7 @@ class RecipeEngineTest {
             displayName = label,
             freshnessLevel = FreshnessLevel.FRESH,
             confidence = 0.95f,
-            bbox = android.graphics.RectF(0f, 0f, 0.5f, 0.5f),
+            bbox = com.example.freshscan.domain.model.BoundingBox(0f, 0f, 0.5f, 0.5f),
             isCookable = isCookable
         )
     }

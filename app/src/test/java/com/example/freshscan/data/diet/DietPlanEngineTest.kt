@@ -19,7 +19,7 @@ import org.junit.Test
 class DietPlanEngineTest {
 
     private val mockAiService = mockk<AIService>()
-    private val mockDao = mockk<DietPlanDao>()
+    private val mockDao = mockk<DietPlanDao>(relaxed = true)
 
     private val engine = DietPlanEngine(mockAiService, mockDao)
 
@@ -275,12 +275,12 @@ class DietPlanEngineTest {
             Result.success("{bad json")
         coEvery { mockDao.insert(any()) } returns Unit
 
-        engine.generateWeekPlan(profile).collect { plan ->
-            // Fallback: empty plan returned, not exception
-            assertTrue(plan.dailyPlans.isEmpty())
-            assertEquals(0, plan.totalCaloriesAvg)
-            assertEquals("", plan.nutritionSummary)
-            assertNotNull(plan.id)
+        try {
+            engine.generateWeekPlan(profile).collect { }
+            fail("Expected DietPlanParseException to be thrown")
+        } catch (e: DietPlanParseException) {
+            // Expected: malformed JSON now throws instead of silently returning empty plan
+            assertNotNull(e.cause)
         }
     }
 

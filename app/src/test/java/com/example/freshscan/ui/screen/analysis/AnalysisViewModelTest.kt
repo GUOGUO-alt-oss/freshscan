@@ -1,15 +1,16 @@
 package com.example.freshscan.ui.screen.analysis
 
-import android.content.ContentResolver
-import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
+import com.example.freshscan.data.history.UserProfileDao
 import com.example.freshscan.data.inference.EfficientDetEngine
 import com.example.freshscan.data.inference.TFLiteClassifier
 import com.example.freshscan.data.mapper.ModelMapper
 import com.example.freshscan.data.mapper.ModelMapperV2
 import com.example.freshscan.data.produce.ProduceInfoEngine
 import com.example.freshscan.data.recipe.RecipeEngine
+import com.example.freshscan.domain.common.ResourceProvider
+import com.example.freshscan.domain.common.UriInputStreamProvider
 import com.example.freshscan.domain.model.DetectedItem
 import com.example.freshscan.domain.model.FreshnessLevel
 import com.example.freshscan.domain.repository.HistoryRepository
@@ -23,6 +24,7 @@ import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -43,7 +45,8 @@ class AnalysisViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
     // Dependencies
-    private lateinit var context: Context
+    private lateinit var resourceProvider: ResourceProvider
+    private lateinit var uriInputStreamProvider: UriInputStreamProvider
     private lateinit var savedStateHandle: SavedStateHandle
     private lateinit var efficientDet: EfficientDetEngine
     private lateinit var classifier260: TFLiteClassifier
@@ -54,14 +57,17 @@ class AnalysisViewModelTest {
     private lateinit var historyRepository: HistoryRepository
     private lateinit var recipeEngine: RecipeEngine
     private lateinit var produceInfoEngine: ProduceInfoEngine
+    private lateinit var userProfileDao: UserProfileDao
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
 
-        context = mockk(relaxed = true)
-        val contentResolver = mockk<ContentResolver>(relaxed = true)
-        every { context.contentResolver } returns contentResolver
+        resourceProvider = mockk(relaxed = true)
+        every { resourceProvider.getString(any()) } returns "mock string"
+        every { resourceProvider.getString(any(), any()) } returns "mock string"
+
+        uriInputStreamProvider = mockk(relaxed = true)
 
         savedStateHandle = mockk(relaxed = true)
         // Mock generic get to return null (relaxed mock returns Any() for generics)
@@ -76,6 +82,8 @@ class AnalysisViewModelTest {
         historyRepository = mockk(relaxed = true)
         recipeEngine = mockk(relaxed = true)
         produceInfoEngine = mockk(relaxed = true)
+        userProfileDao = mockk(relaxed = true)
+        coEvery { userProfileDao.get() } returns flowOf(null)
     }
 
     @After
@@ -86,7 +94,8 @@ class AnalysisViewModelTest {
     // Helper to create ViewModel
     private fun createViewModel(): AnalysisViewModel {
         return AnalysisViewModel(
-            context = context,
+            resourceProvider = resourceProvider,
+            uriInputStreamProvider = uriInputStreamProvider,
             savedStateHandle = savedStateHandle,
             efficientDet = efficientDet,
             classifier260 = classifier260,
@@ -96,7 +105,8 @@ class AnalysisViewModelTest {
             imagePreprocessor = imagePreprocessor,
             historyRepository = historyRepository,
             recipeEngine = recipeEngine,
-            produceInfoEngine = produceInfoEngine
+            produceInfoEngine = produceInfoEngine,
+            userProfileDao = userProfileDao
         )
     }
 
