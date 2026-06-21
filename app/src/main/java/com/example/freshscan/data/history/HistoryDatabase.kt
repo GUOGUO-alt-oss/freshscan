@@ -23,9 +23,10 @@ import com.example.freshscan.util.Constants
         ShoppingItemEntity::class,
         UserProfileEntity::class,     // v3
         DietPlanEntity::class,        // v3
-        MealHistoryEntity::class      // v5
+        MealHistoryEntity::class,     // v5
+        FridgeEntity::class           // v6
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 abstract class HistoryDatabase : RoomDatabase() {
@@ -43,6 +44,9 @@ abstract class HistoryDatabase : RoomDatabase() {
 
     /** v5: Meal history DAO. */
     abstract fun mealHistoryDao(): MealHistoryDao
+
+    /** v6: Fridge items DAO. */
+    abstract fun fridgeDao(): FridgeDao
 
     companion object {
         const val DATABASE_NAME = Constants.DATABASE_NAME
@@ -188,6 +192,32 @@ abstract class HistoryDatabase : RoomDatabase() {
                         generatedAt INTEGER NOT NULL
                     )
                 """)
+            }
+        }
+
+        /**
+         * Migration from v5 to v6:
+         * Create fridge_items table for the "My Fridge" feature.
+         */
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS fridge_items (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        display_name TEXT NOT NULL,
+                        label TEXT NOT NULL DEFAULT '',
+                        fruit_category TEXT NOT NULL DEFAULT 'UNKNOWN',
+                        freshness_level TEXT NOT NULL DEFAULT 'FRESH',
+                        is_cookable INTEGER NOT NULL DEFAULT 0,
+                        added_at INTEGER NOT NULL,
+                        expiry_at INTEGER,
+                        thumbnail_path TEXT,
+                        confidence REAL NOT NULL DEFAULT 0.0,
+                        note TEXT NOT NULL DEFAULT ''
+                    )
+                """)
+                db.execSQL("CREATE INDEX IF NOT EXISTS idx_fridge_added_at ON fridge_items(added_at)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS idx_fridge_display_name ON fridge_items(display_name)")
             }
         }
     }

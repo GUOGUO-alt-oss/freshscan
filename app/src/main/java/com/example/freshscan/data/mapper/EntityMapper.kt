@@ -38,7 +38,10 @@ object EntityMapper {
             timestamp = entity.timestamp,
             thumbnailPath = entity.thumbnailPath,
             inferenceTimeMs = entity.inferenceTimeMs,
-            topPredictions = jsonToPredictions(entity.topPredictionsJson)
+            topPredictions = jsonToPredictions(entity.topPredictionsJson),
+            displayName = entity.displayName,
+            isCookable = entity.isCookable,
+            sessionId = entity.sessionId
         )
     }
 
@@ -72,12 +75,12 @@ object EntityMapper {
     fun toEntityFromItem(item: HistoryItem): HistoryEntity {
         return HistoryEntity(
             id = item.id,
-            sessionId = "",  // v1: no session grouping
+            sessionId = item.sessionId,
             fruitCategory = item.fruitCategory.name,
             freshnessLevel = item.freshnessLevel.name,
             confidence = item.confidence,
-            displayName = "",  // v1: no display name
-            isCookable = false,  // v1: unknown cookability
+            displayName = item.displayName,
+            isCookable = item.isCookable,
             inferenceTimeMs = item.inferenceTimeMs,
             timestamp = item.timestamp,
             thumbnailPath = item.thumbnailPath,

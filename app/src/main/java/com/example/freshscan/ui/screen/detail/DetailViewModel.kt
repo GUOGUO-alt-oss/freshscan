@@ -3,6 +3,7 @@ package com.example.freshscan.ui.screen.detail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.freshscan.data.produce.ProduceInfoEngine
 import com.example.freshscan.domain.model.RecognitionResult
 import com.example.freshscan.domain.repository.HistoryRepository
 import com.example.freshscan.ui.state.DetailUiState
@@ -18,14 +19,14 @@ import javax.inject.Inject
 /**
  * ViewModel for the recognition detail screen.
  *
- * Loads a historical RecognitionResult by ID (passed via navigation argument).
- * HistoryItem entities are converted to RecognitionResult with full
- * topPredictions and inferenceTimeMs support.
+ * Loads a historical RecognitionResult by ID (passed via navigation argument),
+ * and enriches it with full produce info from [ProduceInfoEngine].
  */
 @HiltViewModel
 class DetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val historyRepository: HistoryRepository
+    private val historyRepository: HistoryRepository,
+    private val produceInfoEngine: ProduceInfoEngine
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DetailUiState())
@@ -44,7 +45,7 @@ class DetailViewModel @Inject constructor(
 
     /**
      * Load a recognition result from history by ID.
-     * Uses EntityMapper.toDomain through HistoryRepository to get full data.
+     * Then asynchronously load the full produce info from ProduceInfoEngine.
      */
     private fun loadResult(resultId: String) {
         viewModelScope.launch {
@@ -60,9 +61,13 @@ class DetailViewModel @Inject constructor(
                         topPredictions = historyItem.topPredictions,
                         inferenceTimeMs = historyItem.inferenceTimeMs,
                         timestamp = historyItem.timestamp,
-                        thumbnailPath = historyItem.thumbnailPath
+                        thumbnailPath = historyItem.thumbnailPath,
+                        displayName = historyItem.displayName
                     )
                     _uiState.update { it.copy(result = result, isLoading = false) }
+
+                    // Load produce info asynchronously
+                    loadProduceInfo(historyItem.displayName)
                 } else {
                     _uiState.update { it.copy(isLoading = false, error = "记录未找到") }
                     Logger.w("DetailVM", "Result not found: $resultId")
@@ -70,6 +75,23 @@ class DetailViewModel @Inject constructor(
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = "加载失败: ${e.message}") }
                 Logger.e("DetailVM", "Failed to load result", e)
+            }
+        }
+    }
+
+    /**
+     * Load full produce info (intro, nutrition, storage, seasonality) from the engine.
+     * Uses Flow to get both core info immediately and AI extension when available.
+     */
+    private fun loadProduceInfo(displayName: String) {
+        if (displayName.isBlank()) return
+        viewModelScope.launch {
+            try {
+                produceInfoEngine.getInfo(displayName).collect { info ->
+                    _uiState.update { it.copy(produceInfo = info) }
+                }
+            } catch (e: Exception) {
+                Logger.w("DetailVM", "Failed to load produce info for '$displayName': ${e.message}")
             }
         }
     }

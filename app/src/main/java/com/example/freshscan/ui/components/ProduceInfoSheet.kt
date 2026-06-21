@@ -126,8 +126,89 @@ fun ProduceInfoSheet(
     }
 }
 
+/**
+ * Compact produce info card for embedding in detail screens.
+ * Shows core info sections (intro, nutrition, benefits, storage, seasonality)
+ * without the header bar or AI extension section.
+ */
 @Composable
-private fun SectionTitle(title: String) {
+fun ProduceInfoCard(
+    info: ProduceInfo,
+    modifier: Modifier = Modifier
+) {
+    val hasContent = info.intro.isNotBlank() || info.nutrition.caloriesKcal > 0 ||
+            info.healthBenefits.isNotEmpty() || info.storageTips.isNotBlank()
+
+    if (!hasContent) return
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        HorizontalDivider()
+
+        Text(
+            "📋 食材百科",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+
+        if (info.intro.isNotBlank()) {
+            SectionTitle("📖 简介")
+            Text(info.intro, style = MaterialTheme.typography.bodyMedium)
+        }
+
+        if (info.nutrition.caloriesKcal > 0) {
+            SectionTitle("📊 营养成分（每100g）")
+            NutritionGrid(info.nutrition)
+        }
+
+        if (info.healthBenefits.isNotEmpty()) {
+            SectionTitle("💪 健康功效")
+            info.healthBenefits.forEach { benefit ->
+                Text("✅ $benefit", style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+
+        if (info.storageTips.isNotBlank()) {
+            SectionTitle("📦 保存方法")
+            Text(info.storageTips, style = MaterialTheme.typography.bodyMedium)
+        }
+
+        if (info.seasonality.isNotBlank()) {
+            SectionTitle("🗓️ 时令")
+            Text(info.seasonality, style = MaterialTheme.typography.bodyMedium)
+        }
+
+        // AI extension fields (if available)
+        if (info.selectionTips != null || info.pairingSuggestions != null || info.funFact != null) {
+            HorizontalDivider()
+            Text(
+                "🤖 AI 扩展",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            info.selectionTips?.let {
+                Text("🔍 挑选技巧", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                Text(it, style = MaterialTheme.typography.bodyMedium)
+            }
+            info.pairingSuggestions?.let { pairings ->
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("🥗 搭配建议", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                Text(pairings.joinToString("、"), style = MaterialTheme.typography.bodyMedium)
+            }
+            info.funFact?.let {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("💡 你知道吗", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                Text(it, style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+    }
+}
+
+@Composable
+fun SectionTitle(title: String) {
     Text(
         title,
         style = MaterialTheme.typography.titleSmall,

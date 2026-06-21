@@ -13,6 +13,7 @@ import com.example.freshscan.domain.common.ResourceProvider
 import com.example.freshscan.domain.common.UriInputStreamProvider
 import com.example.freshscan.domain.model.DetectedItem
 import com.example.freshscan.domain.model.FreshnessLevel
+import com.example.freshscan.domain.repository.FridgeRepository
 import com.example.freshscan.domain.repository.HistoryRepository
 import com.example.freshscan.util.ImagePreprocessor
 import io.mockk.Runs
@@ -55,6 +56,7 @@ class AnalysisViewModelTest {
     private lateinit var modelMapperFreshness: ModelMapper
     private lateinit var imagePreprocessor: ImagePreprocessor
     private lateinit var historyRepository: HistoryRepository
+    private lateinit var fridgeRepository: FridgeRepository
     private lateinit var recipeEngine: RecipeEngine
     private lateinit var produceInfoEngine: ProduceInfoEngine
     private lateinit var userProfileDao: UserProfileDao
@@ -80,6 +82,7 @@ class AnalysisViewModelTest {
         modelMapperFreshness = mockk(relaxed = true)
         imagePreprocessor = mockk(relaxed = true)
         historyRepository = mockk(relaxed = true)
+        fridgeRepository = mockk(relaxed = true)
         recipeEngine = mockk(relaxed = true)
         produceInfoEngine = mockk(relaxed = true)
         userProfileDao = mockk(relaxed = true)
@@ -104,6 +107,7 @@ class AnalysisViewModelTest {
             modelMapperFreshness = modelMapperFreshness,
             imagePreprocessor = imagePreprocessor,
             historyRepository = historyRepository,
+            fridgeRepository = fridgeRepository,
             recipeEngine = recipeEngine,
             produceInfoEngine = produceInfoEngine,
             userProfileDao = userProfileDao

@@ -68,6 +68,7 @@
     <!-- v2 Bottom Navigation -->
     <string name="bottom_nav_home">首页</string>
     <string name="bottom_nav_history">历史</string>
+    <string name="bottom_nav_fridge">冰箱</string>
     <string name="bottom_nav_settings">我的</string>
 
     <!-- v2 Analysis Screen -->

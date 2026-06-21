@@ -34,13 +34,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.freshscan.domain.model.FreshnessLevel
 import com.example.freshscan.domain.model.RecognitionResult
 import com.example.freshscan.ui.components.ConfidenceBar
+import com.example.freshscan.ui.components.ProduceInfoCard
 import com.example.freshscan.ui.theme.FreshGreen
 import com.example.freshscan.ui.theme.RottenRed
 import com.example.freshscan.ui.theme.UncertainOrange
 import com.example.freshscan.util.FormatUtil
 
 /**
- * Recognition detail screen showing Top-3 predictions, explanation, and recommendations.
+ * Recognition detail screen showing Top-3 predictions, explanation,
+ * recommendations, and full produce info (intro, nutrition, storage, seasonality).
  *
  * Layout:
  * - TopBar with back navigation
@@ -49,6 +51,7 @@ import com.example.freshscan.util.FormatUtil
  * - Top-3 confidence bars
  * - Explanation text (confidence-dependent)
  * - Recommendation card (freshness-dependent)
+ * - Produce info card (intro, nutrition, health benefits, storage, seasonality)
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -130,8 +133,14 @@ fun DetailScreen(
                 // Recommendation section
                 RecommendationSection(
                     freshnessLevel = result.freshnessLevel,
-                    fruitCategoryName = result.fruitCategory.displayName
+                    fruitCategoryName = result.effectiveName
                 )
+
+                // Produce info card (intro, nutrition, storage, seasonality)
+                uiState.produceInfo?.let { info ->
+                    Spacer(modifier = Modifier.height(16.dp))
+                    ProduceInfoCard(info = info)
+                }
             }
         } else if (error != null) {
             Column(
@@ -191,7 +200,7 @@ private fun DetailTopResult(result: RecognitionResult) {
     Spacer(modifier = Modifier.height(8.dp))
 
     Text(
-        text = "${result.fruitCategory.displayName} · ${result.freshnessLevel.displayName}",
+        text = "${result.effectiveName} · ${result.freshnessLevel.displayName}",
         style = MaterialTheme.typography.headlineMedium,
         fontWeight = FontWeight.Bold,
         textAlign = TextAlign.Center

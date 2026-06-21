@@ -31,8 +31,15 @@ data class RecognitionResult(
     val timestamp: Long = System.currentTimeMillis(),
 
     /** Path to the saved thumbnail image, or null if not saved. */
-    val thumbnailPath: String? = null
-)
+    val thumbnailPath: String? = null,
+
+    /** Human-readable display name from v2 model (e.g. "樱桃番茄"). */
+    val displayName: String = ""
+) {
+    /** Best display name: v2 displayName if available, else FruitCategory fallback. */
+    val effectiveName: String
+        get() = displayName.ifBlank { fruitCategory.displayName }
+}
 
 /**
  * A single prediction entry with label, display name, and confidence.

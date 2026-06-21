@@ -4,8 +4,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.outlined.List
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Kitchen
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Kitchen
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -28,6 +30,7 @@ import com.example.freshscan.ui.screen.analysis.AnalysisScreen
 import com.example.freshscan.ui.screen.personalize.MealQueryScreen
 import com.example.freshscan.ui.screen.personalize.PersonalizeScreen
 import com.example.freshscan.ui.screen.detail.DetailScreen
+import com.example.freshscan.ui.screen.fridge.FridgeScreen
 import com.example.freshscan.ui.screen.history.HistoryScreen
 import com.example.freshscan.ui.screen.home.HomeScreen
 import com.example.freshscan.ui.screen.recipe.RecipeDetailScreen
@@ -46,6 +49,7 @@ object Routes {
     // Bottom navigation tabs
     const val HOME = "home"
     const val HISTORY = "history"
+    const val FRIDGE = "fridge"
     const val SETTINGS = "settings"
 
     // Full-screen routes (hide bottom nav)
@@ -76,6 +80,7 @@ object Routes {
 val TOP_LEVEL_ROUTES = setOf(
     Routes.HOME,
     Routes.HISTORY,
+    Routes.FRIDGE,
     Routes.SETTINGS
 )
 
@@ -101,6 +106,12 @@ val BOTTOM_NAV_TABS = listOf(
         labelResId = R.string.bottom_nav_history,
         selectedIcon = Icons.AutoMirrored.Filled.List,
         unselectedIcon = Icons.AutoMirrored.Outlined.List
+    ),
+    BottomNavTab(
+        route = Routes.FRIDGE,
+        labelResId = R.string.bottom_nav_fridge,
+        selectedIcon = Icons.Filled.Kitchen,
+        unselectedIcon = Icons.Outlined.Kitchen
     ),
     BottomNavTab(
         route = Routes.SETTINGS,
@@ -160,6 +171,15 @@ fun AppNavGraph(navController: NavHostController) {
                 },
                 onNavigateToDetail = { resultId ->
                     navController.navigate(Routes.detail(resultId))
+                }
+            )
+        }
+
+        composable(Routes.FRIDGE) {
+            FridgeScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToCamera = {
+                    navController.navigate(Routes.ANALYSIS)
                 }
             )
         }

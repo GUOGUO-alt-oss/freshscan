@@ -30,6 +30,7 @@ import com.example.freshscan.R
 import com.example.freshscan.domain.model.FruitCategory
 import com.example.freshscan.domain.model.RecipeCategory
 import com.example.freshscan.domain.model.TasteProfile
+import com.example.freshscan.domain.repository.FridgeRepository
 import com.example.freshscan.domain.repository.HistoryRepository
 import com.example.freshscan.util.ImagePreprocessor
 import com.example.freshscan.util.Logger
@@ -90,6 +91,7 @@ class AnalysisViewModel @Inject constructor(
     private val modelMapperFreshness: ModelMapper,
     private val imagePreprocessor: ImagePreprocessor,
     private val historyRepository: HistoryRepository,
+    private val fridgeRepository: FridgeRepository,
     private val recipeEngine: RecipeEngine,
     private val produceInfoEngine: ProduceInfoEngine,
     private val userProfileDao: UserProfileDao
@@ -649,6 +651,19 @@ class AnalysisViewModel @Inject constructor(
                     Logger.e("AnalysisVM", "Failed to save history", e)
                 }
             )
+
+            // Also save to fridge (best-effort, don't block on failure)
+            val freshItems = items.filter { it.freshnessLevel == FreshnessLevel.FRESH }
+            if (freshItems.isNotEmpty()) {
+                fridgeRepository.addFromDetectedItems(freshItems).fold(
+                    onSuccess = { count ->
+                        Logger.i("AnalysisVM", "Fridge: added $count fresh items")
+                    },
+                    onFailure = { e ->
+                        Logger.w("AnalysisVM", "Fridge: failed to add items: ${e.message}")
+                    }
+                )
+            }
         }
     }
 

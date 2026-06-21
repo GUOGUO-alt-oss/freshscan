@@ -99,7 +99,9 @@ class RecipeEngine @Inject constructor(
             }
 
             recipe to score
-        }.filter { (_, score) -> score > 0 }
+        }.filter { (recipe, _) ->
+            recipe.matchIngredients.any { it in ingredientNames }
+        }
 
         // Step 4: Sort by score desc → cooking time asc
         val sorted = scored
