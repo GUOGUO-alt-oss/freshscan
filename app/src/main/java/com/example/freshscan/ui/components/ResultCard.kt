@@ -25,9 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.freshscan.domain.model.FreshnessLevel
 import com.example.freshscan.domain.model.RecognitionResult
-import com.example.freshscan.ui.theme.FreshGreen
-import com.example.freshscan.ui.theme.RottenRed
-import com.example.freshscan.ui.theme.UncertainOrange
+import com.example.freshscan.ui.theme.LocalSemanticColors
 import com.example.freshscan.util.FormatUtil
 
 /**
@@ -44,10 +42,11 @@ fun ResultCard(
     onExpandClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val semanticColors = LocalSemanticColors.current
     val accentColor = when (result.freshnessLevel) {
-        FreshnessLevel.FRESH -> FreshGreen
-        FreshnessLevel.ROTTEN -> RottenRed
-        FreshnessLevel.UNCERTAIN -> UncertainOrange
+        FreshnessLevel.FRESH -> semanticColors.freshnessHigh
+        FreshnessLevel.ROTTEN -> semanticColors.freshnessLow
+        FreshnessLevel.UNCERTAIN -> semanticColors.freshnessMedium
     }
 
     Surface(
@@ -108,7 +107,7 @@ fun ResultCard(
                 Text(
                     text = "置信度过低，请调整角度或光线后重试",
                     style = MaterialTheme.typography.bodySmall,
-                    color = UncertainOrange,
+                    color = semanticColors.freshnessMedium,
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }

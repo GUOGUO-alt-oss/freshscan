@@ -65,11 +65,34 @@
     <string name="error_analysis_failed">分析失败：%1$s</string>
     <string name="error_unknown">未知错误，请重试</string>
 
-    <!-- v2 Bottom Navigation -->
+    <!-- v2/v4.1 Bottom Navigation -->
     <string name="bottom_nav_home">首页</string>
     <string name="bottom_nav_history">历史</string>
     <string name="bottom_nav_fridge">冰箱</string>
     <string name="bottom_nav_settings">我的</string>
+    <string name="bottom_nav_meal_query">AI膳食</string>
+    <string name="bottom_nav_fridge_recipes">冰箱·菜谱</string>
+
+    <!-- v4.1: Favorites -->
+    <string name="favorites_title">我的收藏</string>
+    <string name="favorites_empty">还没有收藏任何菜谱</string>
+    <string name="favorites_empty_hint">浏览菜谱或AI推荐，点击收藏按钮添加</string>
+    <string name="favorites_go_browse">去逛逛</string>
+    <string name="favorites_preset_section">预设菜谱</string>
+    <string name="favorites_ai_section">AI 推荐</string>
+    <string name="favorites_unfavorited">已取消收藏</string>
+
+    <!-- v4.1: Fridge Recipes -->
+    <string name="fridge_recipes_search_hint">搜索果蔬百科...</string>
+    <string name="fridge_recipes_manage_fridge">管理冰箱 →</string>
+    <string name="fridge_recipes_empty_fridge">冰箱还是空的，去扫描食材吧</string>
+
+    <!-- v4.1: Seasonal Tips -->
+    <string name="seasonal_tip_prefix">%1$d月应季食材</string>
+
+    <!-- v4.1: Share -->
+    <string name="share_recipe">分享菜谱</string>
+    <string name="share_recipe_text">用鲜识 App 发现了「%1$s」，快来试试！</string>
 
     <!-- v2 Analysis Screen -->
     <string name="analysis_title">分析</string>

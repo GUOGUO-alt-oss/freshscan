@@ -24,9 +24,11 @@ import com.example.freshscan.util.Constants
         UserProfileEntity::class,     // v3
         DietPlanEntity::class,        // v3
         MealHistoryEntity::class,     // v5
-        FridgeEntity::class           // v6
+        FridgeEntity::class,          // v6
+        CollectedProduceEntity::class, // v7
+        WastageRecordEntity::class     // v7
     ],
-    version = 6,
+    version = 7,
     exportSchema = true
 )
 abstract class HistoryDatabase : RoomDatabase() {
@@ -47,6 +49,12 @@ abstract class HistoryDatabase : RoomDatabase() {
 
     /** v6: Fridge items DAO. */
     abstract fun fridgeDao(): FridgeDao
+
+    /** v7: Produce collection DAO. */
+    abstract fun collectedProduceDao(): CollectedProduceDao
+
+    /** v7: Wastage record DAO. */
+    abstract fun wastageRecordDao(): WastageRecordDao
 
     companion object {
         const val DATABASE_NAME = Constants.DATABASE_NAME
@@ -196,9 +204,40 @@ abstract class HistoryDatabase : RoomDatabase() {
         }
 
         /**
-         * Migration from v5 to v6:
-         * Create fridge_items table for the "My Fridge" feature.
+         * Migration from v6 to v7 (v4.2 — Produce Collection + Wastage):
+         * 1. Create collected_produce table.
+         * 2. Create wastage_records table.
+         * 3. Add expiry_days column to fridge_items.
          */
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS collected_produce (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        label TEXT NOT NULL,
+                        display_name TEXT NOT NULL,
+                        category TEXT NOT NULL DEFAULT '',
+                        first_scan_time INTEGER NOT NULL,
+                        scan_count INTEGER NOT NULL DEFAULT 1,
+                        is_rare INTEGER NOT NULL DEFAULT 0
+                    )
+                """)
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_cp_label ON collected_produce(label)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS idx_cp_first_scan ON collected_produce(first_scan_time)")
+
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS wastage_records (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        item_name TEXT NOT NULL,
+                        estimated_value REAL NOT NULL DEFAULT 0.0,
+                        recorded_at INTEGER NOT NULL
+                    )
+                """)
+                db.execSQL("CREATE INDEX IF NOT EXISTS idx_wr_time ON wastage_records(recorded_at)")
+
+                db.execSQL("ALTER TABLE fridge_items ADD COLUMN expiry_days INTEGER DEFAULT NULL")
+            }
+        }
         val MIGRATION_5_6 = object : Migration(5, 6) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("""

@@ -7,6 +7,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.example.freshscan.BuildConfig
 import com.example.freshscan.data.ai.AIService
 import com.example.freshscan.data.ai.QwenAIService
+import com.example.freshscan.data.history.CollectedProduceDao
+import com.example.freshscan.data.history.CollectionRepositoryImpl
 import com.example.freshscan.data.history.FridgeDao
 import com.example.freshscan.data.history.FridgeRepositoryImpl
 import com.example.freshscan.data.history.HistoryDao
@@ -21,6 +23,7 @@ import com.example.freshscan.data.mapper.ModelMapperV2
 import com.example.freshscan.data.recipe.LabelNormalizer
 import com.example.freshscan.domain.common.ResourceProvider
 import com.example.freshscan.domain.common.UriInputStreamProvider
+import com.example.freshscan.domain.repository.CollectionRepository
 import com.example.freshscan.domain.repository.FridgeRepository
 import com.example.freshscan.domain.repository.HistoryRepository
 import com.example.freshscan.util.ImagePreprocessor
@@ -117,14 +120,23 @@ object AppModule {
     @Provides
     @Singleton
     fun provideHistoryRepository(
-        historyDao: HistoryDao
-    ): HistoryRepository = HistoryRepositoryImpl(historyDao)
+        historyDao: HistoryDao,
+        collectedProduceDao: CollectedProduceDao
+    ): HistoryRepository = HistoryRepositoryImpl(historyDao, collectedProduceDao)
 
     @Provides
     @Singleton
     fun provideFridgeRepository(
         fridgeDao: FridgeDao
     ): FridgeRepository = FridgeRepositoryImpl(fridgeDao)
+
+    // ─── v4.2: Collection Repository ───
+
+    @Provides
+    @Singleton
+    fun provideCollectionRepository(
+        collectedProduceDao: CollectedProduceDao
+    ): CollectionRepository = CollectionRepositoryImpl(collectedProduceDao)
 
     // ─── DataStore ───
 

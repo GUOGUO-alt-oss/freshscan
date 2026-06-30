@@ -66,5 +66,9 @@ data class FridgeEntity(
 
     /** Optional user note (e.g. "从超市买的"). */
     @ColumnInfo(name = "note")
-    val note: String = ""
+    val note: String = "",
+
+    /** v4.2: Optional user-defined expiry in days (overrides auto-estimate). */
+    @ColumnInfo(name = "expiry_days")
+    val expiryDays: Int? = null
 )

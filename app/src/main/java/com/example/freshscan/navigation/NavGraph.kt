@@ -1,13 +1,22 @@
 package com.example.freshscan.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.outlined.List
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Kitchen
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Kitchen
+import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -30,11 +39,15 @@ import com.example.freshscan.ui.screen.analysis.AnalysisScreen
 import com.example.freshscan.ui.screen.personalize.MealQueryScreen
 import com.example.freshscan.ui.screen.personalize.PersonalizeScreen
 import com.example.freshscan.ui.screen.detail.DetailScreen
+import com.example.freshscan.ui.screen.favorites.FavoritesScreen
+import com.example.freshscan.ui.screen.fridge.FridgeRecipesScreen
 import com.example.freshscan.ui.screen.fridge.FridgeScreen
 import com.example.freshscan.ui.screen.history.HistoryScreen
 import com.example.freshscan.ui.screen.home.HomeScreen
 import com.example.freshscan.ui.screen.recipe.RecipeDetailScreen
 import com.example.freshscan.ui.screen.settings.SettingsScreen
+import com.example.freshscan.ui.screen.collection.CollectionScreen
+import com.example.freshscan.ui.screen.report.WeeklyReportScreen
 import com.example.freshscan.ui.screen.shopping.ShoppingListScreen
 
 /**
@@ -46,28 +59,32 @@ import com.example.freshscan.ui.screen.shopping.ShoppingListScreen
  *   TASTE_PROFILE, SHOPPING_LIST
  */
 object Routes {
-    // Bottom navigation tabs
+    // ── v4.1 Bottom navigation tabs ──
     const val HOME = "home"
-    const val HISTORY = "history"
-    const val FRIDGE = "fridge"
+    const val MEAL_QUERY = "meal-query"          // Promoted to tab (was full-screen in v3)
+    const val FRIDGE_RECIPES = "fridge-recipes"  // New merged tab (v4.1)
     const val SETTINGS = "settings"
 
-    // Full-screen routes (hide bottom nav)
+    // ── v4.1 Full-screen routes (hide bottom nav) ──
     const val ANALYSIS = "analysis"
     const val DETAIL = "detail/{resultId}"
     const val RECIPE_DETAIL = "recipe/{recipeId}"
     const val SHOPPING_LIST = "shopping-list"
-
-    // ── v3 新增 ──
     const val PERSONALIZE = "personalize"
-    const val MEAL_QUERY = "meal-query"
+    const val HISTORY = "history"                // Demoted to full-screen (was tab in v4.0)
+    const val FAVORITES = "favorites"            // New in v4.1
 
+    // ── Deprecated routes (redirect) ──
+    @Deprecated("Replaced by FRIDGE_RECIPES")
+    const val FRIDGE = "fridge"
     @Deprecated("Replaced by MEAL_QUERY")
     const val DIET_PLAN = "diet-plan"
-
-    // ── v3 废弃 ──
     @Deprecated("Replaced by PERSONALIZE")
     const val TASTE_PROFILE = "profile/taste"
+
+    // ── v4.2 ──
+    const val WEEKLY_REPORT = "weekly-report"
+    const val COLLECTION = "collection"
 
     // Helper functions for parameterized routes
     fun detail(resultId: String) = "detail/$resultId"
@@ -79,8 +96,8 @@ object Routes {
  */
 val TOP_LEVEL_ROUTES = setOf(
     Routes.HOME,
-    Routes.HISTORY,
-    Routes.FRIDGE,
+    Routes.MEAL_QUERY,
+    Routes.FRIDGE_RECIPES,
     Routes.SETTINGS
 )
 
@@ -102,14 +119,14 @@ val BOTTOM_NAV_TABS = listOf(
         unselectedIcon = Icons.Outlined.Home
     ),
     BottomNavTab(
-        route = Routes.HISTORY,
-        labelResId = R.string.bottom_nav_history,
-        selectedIcon = Icons.AutoMirrored.Filled.List,
-        unselectedIcon = Icons.AutoMirrored.Outlined.List
+        route = Routes.MEAL_QUERY,
+        labelResId = R.string.bottom_nav_meal_query,
+        selectedIcon = Icons.Filled.Restaurant,
+        unselectedIcon = Icons.Outlined.Restaurant
     ),
     BottomNavTab(
-        route = Routes.FRIDGE,
-        labelResId = R.string.bottom_nav_fridge,
+        route = Routes.FRIDGE_RECIPES,
+        labelResId = R.string.bottom_nav_fridge_recipes,
         selectedIcon = Icons.Filled.Kitchen,
         unselectedIcon = Icons.Outlined.Kitchen
     ),
@@ -152,29 +169,45 @@ fun AppNavGraph(navController: NavHostController) {
                     navController.navigate(Routes.recipeDetail(recipeId))
                 },
                 onNavigateToHistory = {
-                    navController.navigate(Routes.HISTORY) {
+                    navController.navigate(Routes.HISTORY)
+                },
+                onNavigateToFridge = {
+                    navController.navigate(Routes.FRIDGE_RECIPES) {
                         popUpTo(navController.graph.findStartDestination().id) {
                             saveState = true
                         }
                         launchSingleTop = true
                         restoreState = true
                     }
+                },
+                onNavigateToCollection = {
+                    navController.navigate(Routes.COLLECTION)
                 }
             )
         }
 
-        composable(Routes.HISTORY) {
-            HistoryScreen(
-                onNavigateBack = { navController.popBackStack() },
+        composable(Routes.MEAL_QUERY) {
+            MealQueryScreen(
+                onNavigateBack = { /* Tab page — no back nav needed */ }
+            )
+        }
+
+        composable(Routes.FRIDGE_RECIPES) {
+            FridgeRecipesScreen(
+                onNavigateToRecipe = { recipeId ->
+                    navController.navigate(Routes.recipeDetail(recipeId))
+                },
+                onNavigateToFridgeManage = {
+                    // Open fridge management — use existing FridgeScreen as sub-page
+                    navController.navigate(Routes.FRIDGE)
+                },
                 onNavigateToCamera = {
                     navController.navigate(Routes.ANALYSIS)
-                },
-                onNavigateToDetail = { resultId ->
-                    navController.navigate(Routes.detail(resultId))
                 }
             )
         }
 
+        // Legacy: redirect FRIDGE to FRIDGE_RECIPES
         composable(Routes.FRIDGE) {
             FridgeScreen(
                 onNavigateBack = { navController.popBackStack() },
@@ -186,11 +219,20 @@ fun AppNavGraph(navController: NavHostController) {
 
         composable(Routes.SETTINGS) {
             SettingsScreen(
-                onNavigateToMealQuery = {
-                    navController.navigate(Routes.MEAL_QUERY)
+                onNavigateToFavorites = {
+                    navController.navigate(Routes.FAVORITES)
                 },
                 onNavigateToShoppingList = {
                     navController.navigate(Routes.SHOPPING_LIST)
+                },
+                onNavigateToHistory = {
+                    navController.navigate(Routes.HISTORY)
+                },
+                onNavigateToPersonalize = {
+                    navController.navigate(Routes.PERSONALIZE)
+                },
+                onNavigateToWeeklyReport = {
+                    navController.navigate(Routes.WEEKLY_REPORT)
                 },
                 onNavigateBack = { navController.popBackStack() }
             )
@@ -198,7 +240,15 @@ fun AppNavGraph(navController: NavHostController) {
 
         // ═══ Full-Screen Detail Pages (hide bottom nav) ═══
 
-        composable(Routes.ANALYSIS) {
+        composable(
+            route = Routes.ANALYSIS,
+            enterTransition = {
+                slideInHorizontally(animationSpec = tween(300)) { it / 4 } + fadeIn(animationSpec = tween(300))
+            },
+            exitTransition = {
+                slideOutHorizontally(animationSpec = tween(200)) { it / 4 } + fadeOut(animationSpec = tween(200))
+            }
+        ) {
             AnalysisScreen(
                 onNavigateBack = {
                     navController.popBackStack(Routes.HOME, inclusive = false)
@@ -213,7 +263,13 @@ fun AppNavGraph(navController: NavHostController) {
             route = Routes.DETAIL,
             arguments = listOf(
                 navArgument("resultId") { type = NavType.StringType }
-            )
+            ),
+            enterTransition = {
+                slideInHorizontally(animationSpec = tween(300)) { it / 4 } + fadeIn(animationSpec = tween(300))
+            },
+            exitTransition = {
+                slideOutHorizontally(animationSpec = tween(200)) { it / 4 } + fadeOut(animationSpec = tween(200))
+            }
         ) {
             DetailScreen(
                 onNavigateBack = { navController.popBackStack() }
@@ -224,7 +280,13 @@ fun AppNavGraph(navController: NavHostController) {
             route = Routes.RECIPE_DETAIL,
             arguments = listOf(
                 navArgument("recipeId") { type = NavType.StringType }
-            )
+            ),
+            enterTransition = {
+                slideInHorizontally(animationSpec = tween(300)) { it / 4 } + fadeIn(animationSpec = tween(300))
+            },
+            exitTransition = {
+                slideOutHorizontally(animationSpec = tween(200)) { it / 4 } + fadeOut(animationSpec = tween(200))
+            }
         ) {
             RecipeDetailScreen(
                 onNavigateBack = { navController.popBackStack() },
@@ -244,8 +306,49 @@ fun AppNavGraph(navController: NavHostController) {
             )
         }
 
-        composable(Routes.MEAL_QUERY) {
-            MealQueryScreen(
+        // ── v4.1: Full-screen routes ──
+        composable(Routes.HISTORY) {
+            HistoryScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToCamera = {
+                    navController.navigate(Routes.ANALYSIS)
+                },
+                onNavigateToDetail = { resultId ->
+                    navController.navigate(Routes.detail(resultId))
+                }
+            )
+        }
+
+        composable(Routes.FAVORITES) {
+            FavoritesScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToRecipe = { recipeId ->
+                    navController.navigate(Routes.recipeDetail(recipeId))
+                },
+                onNavigateToBrowse = {
+                    navController.navigate(Routes.FRIDGE_RECIPES) {
+                        popUpTo(Routes.FAVORITES) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Routes.SHOPPING_LIST) {
+            ShoppingListScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // ── v4.2: Weekly report ──
+        composable(Routes.WEEKLY_REPORT) {
+            WeeklyReportScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // ── v4.2: Collection view ──
+        composable(Routes.COLLECTION) {
+            CollectionScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
@@ -259,10 +362,13 @@ fun AppNavGraph(navController: NavHostController) {
             }
         }
 
-        composable(Routes.SHOPPING_LIST) {
-            ShoppingListScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
+        // Legacy: redirect DIET_PLAN to MEAL_QUERY (no visible frame)
+        composable(Routes.DIET_PLAN) {
+            LaunchedEffect(Unit) {
+                navController.navigate(Routes.MEAL_QUERY) {
+                    popUpTo(Routes.DIET_PLAN) { inclusive = true }
+                }
+            }
         }
 
     }

@@ -19,6 +19,9 @@ import kotlin.random.Random
 /**
  * Scanning particle animation Canvas.
  *
+ * @deprecated Replaced by [WaveScanOverlay] per docs/uiv2.md §5.4.
+ *             Retained for backward compatibility with v1 classic mode.
+ *
  * Physics model (from 06-详细设计文档-v2.md §7.1):
  * - N = 80 particles (configurable, reduced to 60 in dark mode)
  * - Initial position: randomly distributed on the 4 screen edges
@@ -31,6 +34,10 @@ import kotlin.random.Random
  * Replaces [androidx.compose.material3.CircularProgressIndicator] in the
  * Animating analysis state.
  */
+@Deprecated(
+    message = "Use WaveScanOverlay instead",
+    replaceWith = ReplaceWith("WaveScanOverlay(isActive, modifier = modifier)")
+)
 @Composable
 fun ParticleScan(
     isActive: Boolean,

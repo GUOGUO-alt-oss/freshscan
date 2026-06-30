@@ -22,9 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.freshscan.domain.model.Prediction
-import com.example.freshscan.ui.theme.ConfidenceHigh
-import com.example.freshscan.ui.theme.ConfidenceLow
-import com.example.freshscan.ui.theme.ConfidenceMedium
+import com.example.freshscan.ui.theme.LocalSemanticColors
 import com.example.freshscan.util.FormatUtil
 
 /**
@@ -41,11 +39,12 @@ fun ConfidenceBar(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
+        val semanticColors = LocalSemanticColors.current
         predictions.forEachIndexed { index, prediction ->
             val barColor = when (index) {
-                0 -> ConfidenceHigh
-                1 -> ConfidenceMedium
-                2 -> ConfidenceLow
+                0 -> semanticColors.freshnessHigh
+                1 -> semanticColors.freshnessMedium
+                2 -> semanticColors.freshnessLow
                 else -> MaterialTheme.colorScheme.outline
             }
 
@@ -80,8 +79,8 @@ fun ConfidenceBar(
                     progress = { prediction.confidence.coerceIn(0f, 1f) },
                     modifier = Modifier
                         .weight(1f)
-                        .height(6.dp)
-                        .clip(RoundedCornerShape(3.dp)),
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp)),
                     color = barColor,
                     trackColor = barColor.copy(alpha = 0.15f)
                 )

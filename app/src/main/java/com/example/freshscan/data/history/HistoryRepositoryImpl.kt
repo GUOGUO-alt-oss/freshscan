@@ -23,7 +23,8 @@ import javax.inject.Singleton
  */
 @Singleton
 class HistoryRepositoryImpl @Inject constructor(
-    private val historyDao: HistoryDao
+    private val historyDao: HistoryDao,
+    private val collectedProduceDao: CollectedProduceDao
 ) : HistoryRepository {
 
     override fun getHistory(): Flow<List<HistoryItem>> {
@@ -86,6 +87,13 @@ class HistoryRepositoryImpl @Inject constructor(
                 }
                 historyDao.insertAllAndTrim(entities, Constants.MAX_HISTORY_COUNT)
                 Logger.i("History", "Saved ${items.size} detected item(s) for session $sessionId")
+
+                // v4.2: Auto-collect produce for the collection feature
+                items.forEach { item ->
+                    try { collectProduce(item.label, item.displayName) }
+                    catch (_: Exception) { /* silent */ }
+                }
+
                 Result.success(Unit)
             } catch (e: Exception) {
                 Logger.e("History", "Failed to save detected items", e)
@@ -125,5 +133,33 @@ class HistoryRepositoryImpl @Inject constructor(
             val entity = historyDao.getById(id)
             entity?.let { EntityMapper.toDomain(it) }
         }
+    }
+
+    // ─── v4.2: Produce Collection ────────────────────────────────────────────
+
+    private suspend fun collectProduce(label: String, displayName: String) {
+        val existing = collectedProduceDao.getByLabel(label)
+        if (existing != null) {
+            collectedProduceDao.incrementScanCount(label)
+        } else {
+            collectedProduceDao.insert(
+                CollectedProduceEntity(
+                    label = label,
+                    displayName = displayName,
+                    firstScanTime = System.currentTimeMillis(),
+                    scanCount = 1,
+                    isRare = isRareProduce(label)
+                )
+            )
+        }
+    }
+
+    private fun isRareProduce(label: String): Boolean {
+        val rareKeywords = listOf(
+            "okra", "custard", "dragon_fruit", "avocado", "kiwi",
+            "mango", "papaya", "passion", "guava", "lychee",
+            "durian", "jackfruit", "star_fruit", "fig", "persimmon"
+        )
+        return rareKeywords.any { label.contains(it, ignoreCase = true) }
     }
 }

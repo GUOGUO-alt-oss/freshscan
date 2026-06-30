@@ -2,8 +2,11 @@ package com.example.freshscan.ui.screen.settings
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -11,12 +14,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -57,8 +63,11 @@ import com.example.freshscan.BuildConfig
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onNavigateToMealQuery: () -> Unit,
+    onNavigateToFavorites: () -> Unit,
     onNavigateToShoppingList: () -> Unit,
+    onNavigateToHistory: () -> Unit,
+    onNavigateToPersonalize: () -> Unit,
+    onNavigateToWeeklyReport: () -> Unit = {},
     onNavigateBack: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -79,7 +88,8 @@ fun SettingsScreen(
                 title = { Text("我的") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
-                )
+                ),
+                windowInsets = WindowInsets(0, 0, 0, 0)
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -88,55 +98,140 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(rememberScrollState())
         ) {
             // ─── Recognition Mode ───
-            SectionHeader(title = "识别模式")
-            SettingsSwitchRow(
-                icon = Icons.Filled.History,
-                title = "经典模式 (v1)",
-                subtitle = "切换回 v1 实时相机识别",
-                checked = isClassicMode,
-                onCheckedChange = { viewModel.toggleClassicMode(it) }
-            )
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Column {
+                    SectionHeader(title = "识别模式")
+                    SettingsSwitchRow(
+                        icon = Icons.Filled.History,
+                        title = "经典模式 (v1)",
+                        subtitle = "切换回 v1 实时相机识别",
+                        checked = isClassicMode,
+                        onCheckedChange = { viewModel.toggleClassicMode(it) }
+                    )
+                }
+            }
 
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            // ─── v4.1: Recipe Preferences ───
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Column {
+                    SectionHeader(title = "菜谱偏好")
+                    SettingsRow(
+                        icon = Icons.Filled.Bookmark,
+                        title = "我的收藏",
+                        subtitle = "查看收藏的菜谱和AI推荐",
+                        onClick = onNavigateToFavorites
+                    )
+                    SettingsRow(
+                        icon = Icons.Filled.ShoppingCart,
+                        title = "购物清单",
+                        subtitle = "管理需要购买的食材",
+                        onClick = onNavigateToShoppingList
+                    )
+                }
+            }
 
-            // ─── Recipe Preferences ───
-            SectionHeader(title = "菜谱偏好")
-            SettingsRow(
-                icon = Icons.Outlined.Restaurant,
-                title = "AI 膳食推荐",
-                subtitle = "智能推荐一日三餐",
-                onClick = onNavigateToMealQuery
-            )
-            SettingsRow(
-                icon = Icons.Filled.ShoppingCart,
-                title = "购物清单",
-                subtitle = "管理需要购买的食材",
-                onClick = onNavigateToShoppingList
-            )
+            // ─── v4.1: Health Profile ───
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Column {
+                    SectionHeader(title = "健康画像")
+                    SettingsRow(
+                        icon = Icons.Filled.Person,
+                        title = "个性化定制",
+                        subtitle = "口味偏好 · 身体数据 · AI 饮食计划",
+                        onClick = onNavigateToPersonalize
+                    )
+                }
+            }
 
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            // ─── v4.2: Weekly Report ───
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Column {
+                    SectionHeader(title = "饮食报告")
+                    SettingsRow(
+                        icon = Icons.Filled.Assessment,
+                        title = "本周饮食报告",
+                        subtitle = "查看本周扫描、膳食和浪费统计",
+                        onClick = onNavigateToWeeklyReport
+                    )
+                }
+            }
+
+            // ─── v4.1: History (demoted from tab) ───
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Column {
+                    SectionHeader(title = "历史记录")
+                    SettingsRow(
+                        icon = Icons.Filled.History,
+                        title = "识别历史",
+                        subtitle = "查看扫描记录和菜谱推荐",
+                        onClick = onNavigateToHistory
+                    )
+                }
+            }
 
             // ─── Data Management ───
-            SectionHeader(title = "数据管理")
-            SettingsRow(
-                icon = Icons.Filled.Delete,
-                title = "清除历史记录",
-                subtitle = "删除所有扫描记录",
-                onClick = { showClearDialog = true }
-            )
-
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Column {
+                    SectionHeader(title = "数据管理")
+                    SettingsRow(
+                        icon = Icons.Filled.Delete,
+                        title = "清除历史记录",
+                        subtitle = "删除所有扫描记录",
+                        onClick = { showClearDialog = true }
+                    )
+                }
+            }
 
             // ─── About ───
-            SectionHeader(title = "关于")
-            SettingsRow(
-                icon = Icons.Filled.Info,
-                title = "鲜识 v${BuildConfig.VERSION_NAME}",
-                subtitle = "模型: EfficientDet + MobileNetV3\n数据集: Fruits-360 (260类)",
-                onClick = {}
-            )
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Column {
+                    SectionHeader(title = "关于")
+                    SettingsRow(
+                        icon = Icons.Filled.Info,
+                        title = "鲜识 v${BuildConfig.VERSION_NAME}",
+                        subtitle = "模型: EfficientDet + MobileNetV3\n数据集: Fruits-360 (260类)",
+                        onClick = {}
+                    )
+                }
+            }
         }
     }
 

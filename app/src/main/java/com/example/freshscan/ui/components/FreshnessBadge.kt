@@ -21,9 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.freshscan.domain.model.FreshnessLevel
-import com.example.freshscan.ui.theme.FreshGreen
-import com.example.freshscan.ui.theme.RottenRed
-import com.example.freshscan.ui.theme.UncertainOrange
+import com.example.freshscan.ui.theme.LocalSemanticColors
 import com.example.freshscan.util.FormatUtil
 
 /**
@@ -39,10 +37,11 @@ fun FreshnessBadge(
     modifier: Modifier = Modifier,
     compact: Boolean = false
 ) {
+    val semanticColors = LocalSemanticColors.current
     val (backgroundColor, textColor) = when (level) {
-        FreshnessLevel.FRESH -> FreshGreen.copy(alpha = 0.15f) to FreshGreen
-        FreshnessLevel.ROTTEN -> RottenRed.copy(alpha = 0.15f) to RottenRed
-        FreshnessLevel.UNCERTAIN -> UncertainOrange.copy(alpha = 0.15f) to UncertainOrange
+        FreshnessLevel.FRESH -> semanticColors.freshnessHigh.copy(alpha = 0.15f) to semanticColors.freshnessHigh
+        FreshnessLevel.ROTTEN -> semanticColors.freshnessLow.copy(alpha = 0.15f) to semanticColors.freshnessLow
+        FreshnessLevel.UNCERTAIN -> semanticColors.freshnessMedium.copy(alpha = 0.15f) to semanticColors.freshnessMedium
     }
 
     val description = when (level) {

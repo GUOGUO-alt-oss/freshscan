@@ -66,6 +66,26 @@ class ProduceInfoEngine @Inject constructor(
                 emptyList(), "", "")
     }
 
+    /**
+     * Search produce names by query string. Returns matching display names.
+     * Used by the produce encyclopedia search bar in FridgeRecipesScreen (v4.1).
+     */
+    fun searchProduce(query: String): List<String> {
+        val q = query.trim().lowercase()
+        if (q.isEmpty()) return emptyList()
+        return coreInfoCache.values
+            .filter { it.displayName.contains(q, ignoreCase = true) || it.label.contains(q, ignoreCase = true) }
+            .map { it.displayName }
+            .distinct()
+            .take(10)
+    }
+
+    /**
+     * Return ALL produce info entries from the in-memory cache.
+     * Used by CollectionScreen to render the full 260-type grid (unlocked + locked).
+     */
+    fun getAllCoreInfo(): List<ProduceInfo> = coreInfoCache.values.toList()
+
     private fun loadCoreInfo(): Map<String, ProduceInfo> = try {
         val stream = context.assets.open(CORE_INFO_ASSET_PATH)
         val jsonStr = stream.bufferedReader().use { it.readText() }

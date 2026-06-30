@@ -2,6 +2,7 @@ package com.example.freshscan.di
 
 import android.content.Context
 import androidx.room.Room
+import com.example.freshscan.data.history.CollectedProduceDao
 import com.example.freshscan.data.history.FavoriteRecipeDao
 import com.example.freshscan.data.history.FridgeDao
 import com.example.freshscan.data.history.HistoryDao
@@ -9,6 +10,7 @@ import com.example.freshscan.data.history.HistoryDatabase
 import com.example.freshscan.data.history.MealHistoryDao
 import com.example.freshscan.data.history.ShoppingListDao
 import com.example.freshscan.data.history.UserProfileDao
+import com.example.freshscan.data.history.WastageRecordDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -37,7 +39,7 @@ object DatabaseModule {
             HistoryDatabase::class.java,
             HistoryDatabase.DATABASE_NAME
         )
-            .addMigrations(HistoryDatabase.MIGRATION_1_2, HistoryDatabase.MIGRATION_2_3, HistoryDatabase.MIGRATION_3_4, HistoryDatabase.MIGRATION_4_5, HistoryDatabase.MIGRATION_5_6)
+            .addMigrations(HistoryDatabase.MIGRATION_1_2, HistoryDatabase.MIGRATION_2_3, HistoryDatabase.MIGRATION_3_4, HistoryDatabase.MIGRATION_4_5, HistoryDatabase.MIGRATION_5_6, HistoryDatabase.MIGRATION_6_7)
             .build()
     }
 
@@ -75,5 +77,17 @@ object DatabaseModule {
     @Singleton
     fun provideFridgeDao(database: HistoryDatabase): FridgeDao {
         return database.fridgeDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideCollectedProduceDao(database: HistoryDatabase): CollectedProduceDao {
+        return database.collectedProduceDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideWastageRecordDao(database: HistoryDatabase): WastageRecordDao {
+        return database.wastageRecordDao()
     }
 }
